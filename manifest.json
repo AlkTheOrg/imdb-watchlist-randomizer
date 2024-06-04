@@ -1,7 +1,7 @@
 {
     "name": "IMDB Watchlist Randomizer",
     "description": "A browser extension that allows users to filter & randomly pick a movie, tv-series etc, from an IMDB watchlist.",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "manifest_version": 3,
     "icons": {
         "16": "./images/icon-16x16.png",

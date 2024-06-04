@@ -29,7 +29,7 @@
       // const genres = getTextContentIfExists(div, ".genre");
       const ratingIMDB = div.querySelector('[data-testid="ratingGroup--imdb-rating"]').textContent.replace(/\u00A0/g, ' ').split(' ')[0];
       const ratingMetac = getTextContentIfExists(div, ".metacritic-score-box");
-	  
+
       const plot = div.querySelector('.ipc-html-content-inner-div').textContent;
       const creditsElem = div.querySelector(".dli-plot-container").nextElementSibling;
       const credits = creditsElem
@@ -47,7 +47,7 @@
         genres: "", // TODO: Cut support for this as IMDB no longer displays genre content
         ratingIMDB,
         ratingMetac,
-	plot,
+        plot,
         credits,
         multimediaType,
       };
