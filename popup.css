@@ -101,7 +101,6 @@ border-radius: 5px;
     position: relative;
     min-height: 40px;
   }
-
   .ratings,
   .runtime {
     position: absolute;
@@ -112,7 +111,7 @@ border-radius: 5px;
   .ratings {
     list-style: none;
     padding: 0;
-    left: 12%;
+    left: 8%;
   }
 
   .rating {
@@ -149,8 +148,15 @@ border-radius: 5px;
   }
 
   .runtime {
-    right: 12%;
+    right: 8%;
     margin-bottom: 5px;
+  }
+  .plot {
+	  font-size: 15px;
+  }
+  .credits {
+	  font-size: 11px;
+	  color:  #FFFF99;
   }
 
 /******************

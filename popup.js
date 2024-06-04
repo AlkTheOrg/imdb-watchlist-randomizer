@@ -6,6 +6,7 @@ const defaultOptions = {
   showGenres: false,
   showPoster: true,
   showRatings: true,
+  showPlot: true,
 };
 
 // updates the div which I output some errors, state changes etc. to inform the user
@@ -36,7 +37,7 @@ const createTitleElem = (mmedia) => {
 const createYearElem = (year) => {
   const yearElem = document.createElement("p");
   yearElem.textContent = year;
-  addClassesToHTMLElem(yearElem, "year mb-4");
+  addClassesToHTMLElem(yearElem, "year mb-2");
   return yearElem;
 };
 
@@ -86,7 +87,7 @@ const createRuntimeElem = (runtime) => {
 
 const createHeroicContent = (mmedia, showPoster = true, showRatings = true) => {
   const heroicDiv = document.createElement("div");
-  addClassesToHTMLElem(heroicDiv, "mb-4 heroic-content");
+  addClassesToHTMLElem(heroicDiv, "mb-3 heroic-content");
   showRatings && heroicDiv.appendChild(createRatingsElem(mmedia));
   showPoster && heroicDiv.appendChild(createPosterElem(mmedia.imgSrc));
   heroicDiv.appendChild(createRuntimeElem(mmedia.runtime));
@@ -106,6 +107,13 @@ const createGenresElem = (genres) => {
   return genresList;
 };
 
+const createPlotElem = (plot) => {
+  const plotElem = document.createElement("ul");
+  plotElem.textContent = plot;
+  addClassesToHTMLElem(plotElem, "mb-2 plot list-inline");
+  return plotElem;	
+};
+
 const createCreditsElem = (credits) => {
   const creditsList = document.createElement("ul");
   addClassesToHTMLElem(creditsList, "credits list-inline m-0");
@@ -121,11 +129,12 @@ const createCreditsElem = (credits) => {
 const createDivFromMultimedia = (mmedia) => {
   const div = document.createElement("div");
   addClassesToHTMLElem(div, "randomized-mmedia w-75 text-center mx-auto p-2 pb-3");
-  const { showCredits, showGenres, showPoster, showRatings } = loadOptions;
+  const { showCredits, showGenres, showPoster, showRatings, showPlot } = loadOptions;
 
   div.appendChild(createTitleElem(mmedia));
   div.appendChild(createYearElem(mmedia.year));
   div.appendChild(createHeroicContent(mmedia, showPoster, showRatings));
+  showPlot && div.appendChild(createPlotElem(mmedia.plot));
   // showGenres && div.appendChild(createGenresElem(mmedia.genres.split(", "))); // TODO remove from code as well
   showCredits && div.appendChild(createCreditsElem(mmedia.credits));
 
@@ -163,6 +172,7 @@ const loadSyncedOptions = async () => {
 const constructOptionsFromForm = () => {
   const showRatings = document.querySelector("#showRatings").checked;
   const showPoster = document.querySelector("#showPoster").checked;
+  const showPlot = document.querySelector("#showPlot").checked;
   const showGenres = document.querySelector("#showGenres").checked;
   const showCredits = document.querySelector("#showCredits").checked;
   const minIMDBRating = document.querySelector("#minIMDBRating").value;
@@ -170,6 +180,7 @@ const constructOptionsFromForm = () => {
   return {
     showRatings,
     showPoster,
+    showPlot,
     showGenres,
     showCredits,
     minIMDBRating,
@@ -191,7 +202,7 @@ const saveOptionsToSync = () => {
   );
 };
 
-inputIds = ['showRatings', 'showPoster', 'showGenres', 'showCredits', 'minIMDBRating', 'multimediaType']
+inputIds = ['showRatings', 'showPoster', 'showGenres', 'showPlot', 'showCredits', 'minIMDBRating', 'multimediaType']
 inputIds.forEach(id => {
   const inputWithId = document.querySelector(`#${id}`);
   inputWithId.addEventListener('change', saveOptionsToSync)

@@ -23,13 +23,14 @@
 
       const [yearElement, runtimeElement] = div.querySelectorAll('.dli-title-metadata-item');
 
-      const year = yearElement.textContent;
-      const runtime = runtimeElement.textContent;
+      const year = yearElement.textContent.trim();
+      const runtime = runtimeElement ? runtimeElement.textContent.trim():"";
 
       // const genres = getTextContentIfExists(div, ".genre");
       const ratingIMDB = div.querySelector('[data-testid="ratingGroup--imdb-rating"]').textContent.replace(/\u00A0/g, ' ').split(' ')[0];
       const ratingMetac = getTextContentIfExists(div, ".metacritic-score-box");
-
+	  
+      const plot = div.querySelector('.ipc-html-content-inner-div').textContent;
       const creditsElem = div.querySelector(".dli-plot-container").nextElementSibling;
       const credits = creditsElem
         ? Array.from(creditsElem.children)
@@ -46,6 +47,7 @@
         genres: "", // TODO: Cut support for this as IMDB no longer displays genre content
         ratingIMDB,
         ratingMetac,
+	plot,
         credits,
         multimediaType,
       };
@@ -58,8 +60,8 @@
 
     // sends the constructor multimedia objects
     const multimedias = constructMultimediasFromDivs(multimediaDivs);
-    console.log(multimedias)
-
+    console.log(multimedias);
+    
     chrome.runtime.sendMessage({
       message: "all_multimedia",
       payload: JSON.stringify(multimedias),
@@ -70,12 +72,18 @@
   const numOfTitles = numOfTitlesElem.textContent.split(' ')[0];
 
   const loadMore = () => {
-    // const scrollAmount = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrollAmount = 212 * 25; // each element's height is close to 212px and to make sure we load all the images we scroll 25 elements by 25
-    document.documentElement.scrollTop += scrollAmount;
-
-    const allTitles = document.querySelectorAll('.ipc-metadata-list-summary-item');
+	// const scrollAmount = document.documentElement.scrollHeight - document.documentElement.clientHeight;	
+    const allTitles = document.querySelectorAll(".ipc-metadata-list-summary-item");
     const targetElement = allTitles[allTitles.length - 1];
+    const targetElementTop = targetElement.getBoundingClientRect().top;
+	
+    const scrollAmount = 212 * 25; // each element's height is close to 212px and to make sure we load all the images we scroll 25 elements by 25
+    const nextScrollPosition = document.documentElement.scrollTop + scrollAmount;
+
+    if (nextScrollPosition >= targetElementTop)
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    else
+      document.documentElement.scrollTop += scrollAmount;
 
     if (targetElement && targetElement.textContent.trim().startsWith(numOfTitles) && isInView(targetElement)) {
       clearLoadMore();
