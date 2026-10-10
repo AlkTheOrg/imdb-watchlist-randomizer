@@ -145,7 +145,6 @@ const createDivFromMultimedia = (mmedia) => {
 SAVE/LOAD OPTIONS TO/FROM CHROME SYNC
 ****************************************** */
 const updateFormOptionsOnDom = (options) => {
-  console.log(options);
   Object.keys(options).forEach((key) => {
     const elem = document.getElementById(key);
     elem.tagName === "INPUT" && elem.type === "checkbox"
@@ -162,7 +161,6 @@ const loadSyncedOptions = async () => {
     const options = result.imdbRandomizer_options;
     if (options) loadOptions = options;
     else {
-      console.log("Couldnt find saved options on sync. Using the defaults");
       loadOptions = defaultOptions;
     }
     updateFormOptionsOnDom(loadOptions);
@@ -195,7 +193,6 @@ const saveOptionsToSync = () => {
       imdbRandomizer_options: options,
     },
     () => {
-      console.log("saved");
       // updateinfoOutputDivMsg("Your randomize options are saved.", "#007bff");
       loadOptions = options;
     }
@@ -216,26 +213,15 @@ inputIds.forEach(id => {
 SAVE/LOAD LAST RANDOMLY CHOSEN MMEDIA TO/FROM CHROME SYNC
 ****************************************** */
 const saveLastRandToSync = (randMmedia) => {
-  console.log(randMmedia);
-  chrome.storage.sync.set(
-    {
-      imdbRandomizer_lastRandom: randMmedia,
-    },
-    () => {
-      console.log("lastRandom saved");
-    }
-  );
+  chrome.storage.sync.set({ imdbRandomizer_lastRandom: randMmedia });
 };
 
 const loadLastRand = async () => {
-  console.log("loading last rand");
   await chrome.storage.sync.get("imdbRandomizer_lastRandom", (result) => {
     const lastRand = result.imdbRandomizer_lastRandom;
     if (lastRand) {
       const div = createDivFromMultimedia(lastRand);
       document.querySelector("#results").appendChild(div);
-    } else {
-      console.log("No last rand mmedia");
     }
   });
 };
@@ -244,14 +230,7 @@ const loadLastRand = async () => {
 SAVE/LOAD WATCHLIST TO/FROM LOCAL STORAGE
 ****************************************** */
 const saveWatchlistToLocal = (multimedias) => {
-  chrome.storage.local.set(
-    {
-      imdbRandomizer_watchlist: multimedias,
-    },
-    () => {
-      console.log("watchlist is saved");
-    }
-  );
+  chrome.storage.local.set({ imdbRandomizer_watchlist: multimedias });
 };
 
 const loadWatchlistFromLocal = (randomizeFromCacheBtn, listenerCBack) => {
@@ -265,7 +244,6 @@ const loadWatchlistFromLocal = (randomizeFromCacheBtn, listenerCBack) => {
         );
         resolve(multimedias);
       } else {
-        console.log("No cached watchlist");
         randomizeFromCacheBtn.disabled = true;
         randomizeFromCacheBtn.removeEventListener("click", () =>
           listenerCBack(multimedias)
@@ -323,12 +301,16 @@ const filterMultimedias = (multimedias) => {
 
 const main = (multimedias) => {
   const filteredMultimedias = filterMultimedias(multimedias);
-  console.log(filteredMultimedias);
 
   if (filteredMultimedias.length >= 1) {
     const randMmedia = showRandomMultimedia(filteredMultimedias);
     saveLastRandToSync(randMmedia);
-  } else console.log("Nothing to choose"); //TODO
+  } else {
+    updateinfoOutputDivMsg(
+      "No titles match the selected filters.",
+      "rgb(255 0 0)"
+    );
+  }
 };
 
 /* ******************************************
@@ -348,12 +330,15 @@ const handleAllMultimediaRequest = (request) => {
   const multimedias = JSON.parse(request.payload);
   saveWatchlistToLocal(multimedias);
   loadWatchlist(); // using it to update dom. gotta refactor this project lol
-  console.log("loadOptions:", loadOptions);
   main(multimedias);
+  console.info(
+    `[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`
+  );
   updateinfoOutputDivMsg(
     "Scanning is done and the RANDOMIZE button is available.",
     "#FF4F00"
   );
+  document.querySelector("#scanAndRandomize").disabled = false;
 };
 
 //LISTENING FOR THE VALIDATION OF THE WATCHLIST PAGE URL
@@ -369,11 +354,29 @@ const handleWatchListValidRequest = (request) => {
 };
 
 const handleScanningStartedRequest = (request) => {
+  document.querySelector("#scanAndRandomize").disabled = true;
+  console.info("[IMDb Randomizer] Watchlist scan started in detailed mode.");
   updateinfoOutputDivMsg("Scanning has started. Hold on there!", "#DC3545");
 };
 
+const handleScanningProgressRequest = (request) => {
+  const { page, totalPages, titles } = request.payload;
+  console.info(
+    `[IMDb Randomizer] Page ${page}/${totalPages}: ${titles} titles collected.`
+  );
+  updateinfoOutputDivMsg(
+    `Scanning detailed page ${page} of ${totalPages} (${titles} titles found)...`,
+    "#DC3545"
+  );
+};
+
+const handleScanningFailedRequest = (request) => {
+  document.querySelector("#scanAndRandomize").disabled = false;
+  console.error(`[IMDb Randomizer] Scan failed: ${request.payload}`);
+  updateinfoOutputDivMsg(`Scanning failed: ${request.payload}`, "rgb(255 0 0)");
+};
+
 chrome.runtime.onMessage.addListener((request, sender) => {
-  console.log(request);
   const msg = request.message;
   if (msg) {
     if (msg === "all_multimedia") handleAllMultimediaRequest(request);
@@ -381,6 +384,10 @@ chrome.runtime.onMessage.addListener((request, sender) => {
       handleWatchListValidRequest(request);
     else if (msg === "scanning_has_started")
       handleScanningStartedRequest(request);
+    else if (msg === "scanning_progress")
+      handleScanningProgressRequest(request);
+    else if (msg === "scanning_failed")
+      handleScanningFailedRequest(request);
     else throw new Error("Invalid message");
   }
 });
@@ -402,13 +409,13 @@ const clearSyncAndLocal = () => {
   chrome.storage.sync.clear(function () {
     var error = chrome.runtime.lastError;
     if (error) {
-      console.error(error);
+      console.error("[IMDb Randomizer] Could not clear synced data.", error);
     }
   });
   chrome.storage.local.clear(function () {
     var error = chrome.runtime.lastError;
     if (error) {
-      console.error(error);
+      console.error("[IMDb Randomizer] Could not clear local data.", error);
     }
   });
 };

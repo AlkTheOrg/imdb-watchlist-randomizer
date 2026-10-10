@@ -101,6 +101,13 @@ border-radius: 5px;
     position: relative;
     min-height: 40px;
   }
+
+  .poster {
+    width: 96px;
+    height: 142px;
+    object-fit: cover;
+  }
+
   .ratings,
   .runtime {
     position: absolute;

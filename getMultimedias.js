@@ -1,111 +1,171 @@
-(function () {
-  console.log("get multimedias running");
+(async function () {
+  const MAX_PAGES = 100;
 
-  const getTextContentIfExists = (div, query) => {
-    const element = div.querySelector(query);
-    return element ? element.textContent : "";
+  const formatRuntime = (seconds) => {
+    if (!seconds) return "";
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    return [hours ? `${hours}h` : "", minutes ? `${minutes}m` : ""]
+      .filter(Boolean)
+      .join(" ");
   };
 
-  const constructMultimediasFromDivs = (multimediaDivs) => {
-    return Array.from(multimediaDivs).map((div) => {
-      const titleTypeSpan = div.querySelector('span.dli-title-type-data');
-      const multimediaType = titleTypeSpan && titleTypeSpan.textContent === 'TV Series'
-        ? "series"
-        : "movie";
-
-      const posterContainer = div.querySelector('.ipc-poster');
-      const imgHrefElem = posterContainer.querySelector('img');
-      const imgSrc = imgHrefElem.src;
-      
-      const multimediaHref = div.querySelector('.ipc-lockup-overlay.ipc-focusable').href;
-
-      const title = div.querySelector(".ipc-title__text").textContent.split('.')[1].trim();
-
-      const [yearElement, runtimeElement] = div.querySelectorAll('.dli-title-metadata-item');
-
-      const year = yearElement.textContent.trim();
-      const runtime = runtimeElement ? runtimeElement.textContent.trim():"";
-
-      // const genres = getTextContentIfExists(div, ".genre");
-      const ratingIMDB = div.querySelector('[data-testid="ratingGroup--imdb-rating"]').textContent.replace(/\u00A0/g, ' ').split(' ')[0];
-      const ratingMetac = getTextContentIfExists(div, ".metacritic-score-box");
-
-      const plot = div.querySelector('.ipc-html-content-inner-div').textContent;
-      const creditsElem = div.querySelector(".dli-plot-container").nextElementSibling;
-      const credits = creditsElem
-        ? Array.from(creditsElem.children)
-            // .filter((elem) => elem.tagName !== "SPAN") // TODO split based on director and stars span
-            .map((elem) => elem.textContent)
-        : [];
-
-      return {
-        title,
-        multimediaHref,
-        imgSrc,
-        year,
-        runtime,
-        genres: "", // TODO: Cut support for this as IMDB no longer displays genre content
-        ratingIMDB,
-        ratingMetac,
-        plot,
-        credits,
-        multimediaType,
-      };
+  const constructMultimediaFromListItem = (listItem) => {
+    const year = listItem.releaseYear?.year;
+    const endYear = listItem.releaseYear?.endYear;
+    const titleType = listItem.titleType?.id || "";
+    const isSeries =
+      listItem.titleType?.canHaveEpisodes ||
+      /series|episode/i.test(titleType);
+    const credits = (listItem.principalCreditsV2 || []).map((group) => {
+      const names = (group.credits || [])
+        .map((credit) => credit.name?.nameText?.text)
+        .filter(Boolean);
+      const label = group.grouping?.text;
+      return label ? `${label}: ${names.join(", ")}` : names.join(", ");
     });
+
+    return {
+      titleId: listItem.id || "",
+      title: listItem.titleText?.text || "",
+      multimediaHref: listItem.id
+        ? `https://www.imdb.com/title/${listItem.id}/`
+        : "",
+      imgSrc: listItem.primaryImage?.url || "",
+      year: year ? `${year}${endYear ? `–${endYear}` : ""}` : "",
+      runtime: formatRuntime(
+        listItem.runtime?.seconds || listItem.originalRuntime?.seconds
+      ),
+      genres: "",
+      ratingIMDB: listItem.ratingsSummary?.aggregateRating?.toString() || "",
+      ratingMetac: listItem.metacritic?.metascore?.score?.toString() || "",
+      plot: listItem.plot?.plotText?.plainText || "",
+      credits,
+      multimediaType: isSeries ? "series" : "movie",
+    };
   };
 
-  const clearLoadMore = async () => {
-    // gets all of the multimedia divs
-    const multimediaDivs = document.querySelectorAll(".ipc-metadata-list-summary-item");
+  const pageUrl = (page) => {
+    const url = new URL(window.location.href);
+    // Detailed view includes posters, plots, credits, ratings, and all 250
+    // list items in IMDb's embedded page data.
+    url.searchParams.set("view", "detailed");
+    url.searchParams.set("page", String(page));
+    url.searchParams.delete("start");
+    return url.href;
+  };
 
-    // sends the constructor multimedia objects
-    const multimedias = constructMultimediasFromDivs(multimediaDivs);
-    console.log(multimedias);
-    
-    chrome.runtime.sendMessage({
-      message: "all_multimedia",
-      payload: JSON.stringify(multimedias),
+  const fetchPage = async (page) => {
+    const response = await fetch(pageUrl(page), {
+      credentials: "include",
+      headers: { Accept: "text/html" },
     });
-  };
-  
-  const numOfTitlesElem = document.querySelector('[data-testid="list-page-mc-total-items"]');
-  const numOfTitles = numOfTitlesElem.textContent.split(' ')[0];
-
-  const loadMore = () => {
-	// const scrollAmount = document.documentElement.scrollHeight - document.documentElement.clientHeight;	
-    const allTitles = document.querySelectorAll(".ipc-metadata-list-summary-item");
-    const targetElement = allTitles[allTitles.length - 1];
-    const targetElementTop = targetElement.getBoundingClientRect().top;
-	
-    const scrollAmount = 212 * 25; // each element's height is close to 212px and to make sure we load all the images we scroll 25 elements by 25
-    const nextScrollPosition = document.documentElement.scrollTop + scrollAmount;
-
-    if (nextScrollPosition >= targetElementTop)
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    else
-      document.documentElement.scrollTop += scrollAmount;
-
-    if (targetElement && targetElement.textContent.trim().startsWith(numOfTitles) && isInView(targetElement)) {
-      clearLoadMore();
-    } else {
-      setTimeout(loadMore, 500);
+    if (!response.ok) {
+      throw new Error(`IMDb returned ${response.status} for page ${page}.`);
     }
+    const html = await response.text();
+    return new DOMParser().parseFromString(html, "text/html");
   };
 
-  chrome.runtime.sendMessage({
-    message: "scanning_has_started",
-  });
-  
-  loadMore();
+  const extractPageData = (doc) => {
+    const nextDataScript = doc.querySelector("#__NEXT_DATA__");
+    if (!nextDataScript) {
+      throw new Error("IMDb page data (__NEXT_DATA__) is missing.");
+    }
+
+    let nextData;
+    try {
+      nextData = JSON.parse(nextDataScript.textContent);
+    } catch {
+      throw new Error("IMDb page data (__NEXT_DATA__) is not valid JSON.");
+    }
+
+    const search =
+      nextData.props?.pageProps?.mainColumnData?.predefinedList
+        ?.titleListItemSearch;
+    if (!Array.isArray(search?.edges) || !Number.isInteger(search?.total)) {
+      throw new Error("IMDb watchlist data has an unexpected structure.");
+    }
+
+    const items = search.edges.map((edge) =>
+      constructMultimediaFromListItem(edge.listItem)
+    );
+    if (items.some((item) => !item.titleId || !item.title)) {
+      throw new Error("IMDb returned an incomplete title entry.");
+    }
+
+    return {
+      items,
+      total: search.total,
+    };
+  };
+
+  const notify = (message, payload) =>
+    chrome.runtime.sendMessage({ message, payload }).catch(() => {
+      // The popup may have been closed while the scan was running.
+    });
+
+  try {
+    console.info("[IMDb Randomizer] Watchlist scan started in detailed mode.");
+    notify("scanning_has_started");
+
+    const multimedias = [];
+    const seenPages = new Set();
+    let totalPages = 1;
+    let expectedTotal = 0;
+
+    for (let page = 1; page <= Math.min(totalPages, MAX_PAGES); page += 1) {
+      const doc = await fetchPage(page);
+      const pageData = extractPageData(doc);
+
+      if (!pageData.items.length) {
+        throw new Error(
+          "IMDb returned no titles. Make sure the watchlist is visible and try again."
+        );
+      }
+      if (page === 1) {
+        expectedTotal = pageData.total;
+        totalPages = Math.ceil(expectedTotal / pageData.items.length);
+        if (totalPages > MAX_PAGES) {
+          throw new Error(
+            `IMDb returned an unexpected page count: ${totalPages}.`
+          );
+        }
+      }
+
+      const pageFingerprint = pageData.items.map((item) => item.titleId).join(",");
+      if (seenPages.has(pageFingerprint)) {
+        throw new Error(`IMDb repeated page ${page}; scanning was stopped.`);
+      }
+      seenPages.add(pageFingerprint);
+      multimedias.push(...pageData.items);
+
+      console.info(
+        `[IMDb Randomizer] Page ${page}/${totalPages}: ` +
+          `${pageData.items.length} titles read (${multimedias.length} total).`
+      );
+
+      notify("scanning_progress", {
+        page,
+        totalPages,
+        titles: multimedias.length,
+      });
+    }
+
+    if (!multimedias.length) throw new Error("No watchlist titles could be read.");
+    if (multimedias.length !== expectedTotal) {
+      throw new Error(
+        `IMDb reports ${expectedTotal} titles, but only ${multimedias.length} were read.`
+      );
+    }
+
+    await chrome.storage.local.set({ imdbRandomizer_watchlist: multimedias });
+    console.info(
+      `[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`
+    );
+    notify("all_multimedia", JSON.stringify(multimedias));
+  } catch (error) {
+    console.error("[IMDb Randomizer] Watchlist scan failed.", error);
+    notify("scanning_failed", error instanceof Error ? error.message : String(error));
+  }
 })();
-
-function isInView(element) {
-  const rect = element.getBoundingClientRect();
-  const windowHeight = (window.innerHeight || document.documentElement.clientHeight);
-  const windowWidth = (window.innerWidth || document.documentElement.clientWidth);
-
-  const vertInView = (rect.top <= windowHeight) && ((rect.top + rect.height) >= 0);
-  const horInView = (rect.left <= windowWidth) && ((rect.left + rect.width) >= 0);
-
-  return (vertInView && horInView);
-}
