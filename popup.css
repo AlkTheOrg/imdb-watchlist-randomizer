@@ -127,7 +127,7 @@ border-radius: 5px;
   }
 
   .ratings .star {
-    background: url("images/star.png");
+    background: url("/images/star.png");
     display: inline-block;
     height: 16px;
     width: 16px;

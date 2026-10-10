@@ -1,0 +1,21 @@
+{
+  "name": "imdb-watchlist-randomizer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "vite build",
+    "build:dev": "vite build --mode development",
+    "build:watch": "vite build --watch --mode development",
+    "dev": "pnpm build:dev && concurrently --kill-others --names vite,chrome \"pnpm build:watch\" \"web-ext run --source-dir dist --target chromium\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.10.0",
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "vite": "^8.3.4",
+    "web-ext": "^10.7.0"
+  }
+}
