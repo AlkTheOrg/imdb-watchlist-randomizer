@@ -1,5 +1,16 @@
-let loadOptions;
-const defaultOptions = {
+import type {
+  ExtensionMessage,
+  Multimedia,
+  MultimediaFilter,
+  RandomizerOptions,
+} from "./types";
+
+type MessageOf<Type extends ExtensionMessage["message"]> = Extract<
+  ExtensionMessage,
+  { message: Type }
+>;
+
+const defaultOptions: RandomizerOptions = {
   minIMDBRating: "1",
   multimediaType: "movie",
   showCredits: true,
@@ -9,93 +20,110 @@ const defaultOptions = {
   showPlot: true,
 };
 
-// updates the div which I output some errors, state changes etc. to inform the user
-const updateinfoOutputDivMsg = (msg, color) => {
-  const errorMsgDiv = document.getElementById("infoOutputDiv");
-  errorMsgDiv.textContent = msg;
-  errorMsgDiv.style.color = color;
-  errorMsgDiv.classList.add("mb-2");
+let loadOptions: RandomizerOptions = defaultOptions;
+let randomizeFromCacheListener: (() => void) | null = null;
+
+const getElementById = <ElementType extends HTMLElement>(
+  id: string
+): ElementType => {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`Required popup element #${id} is missing.`);
+  return element as ElementType;
+};
+
+// Updates the status area used for errors and scan progress.
+const updateinfoOutputDivMsg = (msg: string, color = ""): void => {
+  const output = getElementById<HTMLDivElement>("infoOutputDiv");
+  output.textContent = msg;
+  output.style.color = color;
+  output.classList.add("mb-2");
 };
 
 /* ******************************************
 GENERATING RANDOMLY SELECTED MULTIMEDIA'S DIV
 ****************************************** */
 
-const addClassesToHTMLElem = (elem, classesString) => {
-  elem.classList.add(...classesString.split(" "));
+const addClassesToHTMLElem = (element: Element, classes: string): void => {
+  element.classList.add(...classes.split(" "));
 };
 
-const createTitleElem = (mmedia) => {
-  const titleHrefElem = document.createElement("a");
-  titleHrefElem.href = mmedia.multimediaHref;
-  titleHrefElem.textContent = mmedia.title;
-  titleHrefElem.target = "_blank";
-  addClassesToHTMLElem(titleHrefElem, "title");
-  return titleHrefElem;
+const createTitleElem = (multimedia: Multimedia): HTMLAnchorElement => {
+  const title = document.createElement("a");
+  title.href = multimedia.multimediaHref;
+  title.textContent = multimedia.title;
+  title.target = "_blank";
+  addClassesToHTMLElem(title, "title");
+  return title;
 };
 
-const createYearElem = (year) => {
-  const yearElem = document.createElement("p");
-  yearElem.textContent = year;
-  addClassesToHTMLElem(yearElem, "year mb-2");
-  return yearElem;
+const createYearElem = (year: string): HTMLParagraphElement => {
+  const yearElement = document.createElement("p");
+  yearElement.textContent = year;
+  addClassesToHTMLElem(yearElement, "year mb-2");
+  return yearElement;
 };
 
-const createIMDBRatingElem = (rating) => {
-  const ratingElem = document.createElement("li");
-  addClassesToHTMLElem(ratingElem, "rating");
-  ratingElem.innerHTML = '<span class="star"></span>' + rating;
-  return ratingElem;
+const createIMDBRatingElem = (rating: string): HTMLLIElement => {
+  const ratingElement = document.createElement("li");
+  addClassesToHTMLElem(ratingElement, "rating");
+  ratingElement.innerHTML = `<span class="star"></span>${rating}`;
+  return ratingElement;
 };
 
-const createMetascoreElem = (score) => {
-  const scoreElem = document.createElement("li");
-  scoreElem.textContent = score;
+const createMetascoreElem = (score: string): HTMLLIElement => {
+  const scoreElement = document.createElement("li");
+  scoreElement.textContent = score;
+  const numericScore = Number(score);
   const scoreClass =
-    +score > 60
+    numericScore > 60
       ? "metacritic-favorable"
-      : +score > 39
-      ? "metacritic-average"
-      : "metacritic-unfavorable";
-  addClassesToHTMLElem(scoreElem, "mx-auto rating metacritic " + scoreClass);
-  return scoreElem;
+      : numericScore > 39
+        ? "metacritic-average"
+        : "metacritic-unfavorable";
+  addClassesToHTMLElem(
+    scoreElement,
+    `mx-auto rating metacritic ${scoreClass}`
+  );
+  return scoreElement;
 };
 
-const createRatingsElem = (mmedia) => {
-  const ratingsElem = document.createElement("ul");
-  addClassesToHTMLElem(ratingsElem, "ratings");
-  ratingsElem.appendChild(createIMDBRatingElem(mmedia.ratingIMDB));
-  ratingsElem.appendChild(createMetascoreElem(mmedia.ratingMetac));
-  return ratingsElem;
+const createRatingsElem = (multimedia: Multimedia): HTMLUListElement => {
+  const ratings = document.createElement("ul");
+  addClassesToHTMLElem(ratings, "ratings");
+  ratings.appendChild(createIMDBRatingElem(multimedia.ratingIMDB));
+  ratings.appendChild(createMetascoreElem(multimedia.ratingMetac));
+  return ratings;
 };
 
-const createPosterElem = (src) => {
-  const posterElem = document.createElement("img", { alt: "poster" });
-  !src || src.slice(0, 4) !== "http"
-    ? (posterElem.src = "./images/fbackImg.png")
-    : (posterElem.src = src);
-  addClassesToHTMLElem(posterElem, "poster");
-  return posterElem;
+const createPosterElem = (src: string): HTMLImageElement => {
+  const poster = document.createElement("img");
+  poster.alt = "poster";
+  poster.src = src.startsWith("http") ? src : "./images/fbackImg.png";
+  addClassesToHTMLElem(poster, "poster");
+  return poster;
 };
 
-const createRuntimeElem = (runtime) => {
-  const runtimeELem = document.createElement("p");
-  addClassesToHTMLElem(runtimeELem, "runtime");
-  runtimeELem.textContent = runtime;
-  return runtimeELem;
+const createRuntimeElem = (runtime: string): HTMLParagraphElement => {
+  const runtimeElement = document.createElement("p");
+  addClassesToHTMLElem(runtimeElement, "runtime");
+  runtimeElement.textContent = runtime;
+  return runtimeElement;
 };
 
-const createHeroicContent = (mmedia, showPoster = true, showRatings = true) => {
-  const heroicDiv = document.createElement("div");
-  addClassesToHTMLElem(heroicDiv, "mb-3 heroic-content");
-  showRatings && heroicDiv.appendChild(createRatingsElem(mmedia));
-  showPoster && heroicDiv.appendChild(createPosterElem(mmedia.imgSrc));
-  heroicDiv.appendChild(createRuntimeElem(mmedia.runtime));
-  return heroicDiv;
+const createHeroicContent = (
+  multimedia: Multimedia,
+  showPoster = true,
+  showRatings = true
+): HTMLDivElement => {
+  const heroicContent = document.createElement("div");
+  addClassesToHTMLElem(heroicContent, "mb-3 heroic-content");
+  if (showRatings) heroicContent.appendChild(createRatingsElem(multimedia));
+  if (showPoster) heroicContent.appendChild(createPosterElem(multimedia.imgSrc));
+  heroicContent.appendChild(createRuntimeElem(multimedia.runtime));
+  return heroicContent;
 };
 
-// genres: [Crime, Drama, Mystery]
-const createGenresElem = (genres) => {
+const createGenresElem = (genres: string[]): HTMLUListElement => {
   const genresList = document.createElement("ul");
   addClassesToHTMLElem(genresList, "genres list-inline");
   genres.forEach((genre) => {
@@ -107,14 +135,14 @@ const createGenresElem = (genres) => {
   return genresList;
 };
 
-const createPlotElem = (plot) => {
-  const plotElem = document.createElement("ul");
-  plotElem.textContent = plot;
-  addClassesToHTMLElem(plotElem, "mb-2 plot list-inline");
-  return plotElem;	
+const createPlotElem = (plot: string): HTMLUListElement => {
+  const plotElement = document.createElement("ul");
+  plotElement.textContent = plot;
+  addClassesToHTMLElem(plotElement, "mb-2 plot list-inline");
+  return plotElement;
 };
 
-const createCreditsElem = (credits) => {
+const createCreditsElem = (credits: string[]): HTMLUListElement => {
   const creditsList = document.createElement("ul");
   addClassesToHTMLElem(creditsList, "credits list-inline m-0");
   credits.forEach((credit) => {
@@ -126,185 +154,211 @@ const createCreditsElem = (credits) => {
   return creditsList;
 };
 
-const createDivFromMultimedia = (mmedia) => {
-  const div = document.createElement("div");
-  addClassesToHTMLElem(div, "randomized-mmedia w-75 text-center mx-auto p-2 pb-3");
-  const { showCredits, showGenres, showPoster, showRatings, showPlot } = loadOptions;
+const createDivFromMultimedia = (multimedia: Multimedia): HTMLDivElement => {
+  const result = document.createElement("div");
+  addClassesToHTMLElem(
+    result,
+    "randomized-mmedia w-75 text-center mx-auto p-2 pb-3"
+  );
+  const { showCredits, showPoster, showRatings, showPlot } = loadOptions;
 
-  div.appendChild(createTitleElem(mmedia));
-  div.appendChild(createYearElem(mmedia.year));
-  div.appendChild(createHeroicContent(mmedia, showPoster, showRatings));
-  showPlot && div.appendChild(createPlotElem(mmedia.plot));
-  // showGenres && div.appendChild(createGenresElem(mmedia.genres.split(", "))); // TODO remove from code as well
-  showCredits && div.appendChild(createCreditsElem(mmedia.credits));
+  result.appendChild(createTitleElem(multimedia));
+  result.appendChild(createYearElem(multimedia.year));
+  result.appendChild(createHeroicContent(multimedia, showPoster, showRatings));
+  if (showPlot) result.appendChild(createPlotElem(multimedia.plot));
+  // Genres are not currently returned by the IMDb scanner.
+  // if (loadOptions.showGenres) {
+  //   result.appendChild(createGenresElem(multimedia.genres.split(", ")));
+  // }
+  if (showCredits) result.appendChild(createCreditsElem(multimedia.credits));
 
-  return div;
+  return result;
 };
 
 /* ******************************************
 SAVE/LOAD OPTIONS TO/FROM CHROME SYNC
 ****************************************** */
-const updateFormOptionsOnDom = (options) => {
-  Object.keys(options).forEach((key) => {
-    const elem = document.getElementById(key);
-    elem.tagName === "INPUT" && elem.type === "checkbox"
-      ? (elem.checked = options[key])
-      : (elem.value = options[key]);
-  });
+
+const updateFormOptionsOnDom = (options: RandomizerOptions): void => {
+  getElementById<HTMLInputElement>("showRatings").checked = options.showRatings;
+  getElementById<HTMLInputElement>("showPoster").checked = options.showPoster;
+  getElementById<HTMLInputElement>("showPlot").checked = options.showPlot;
+  getElementById<HTMLInputElement>("showGenres").checked = options.showGenres;
+  getElementById<HTMLInputElement>("showCredits").checked = options.showCredits;
+  getElementById<HTMLSelectElement>("minIMDBRating").value =
+    options.minIMDBRating;
+  getElementById<HTMLSelectElement>("multimediaType").value =
+    options.multimediaType;
 };
 
-// if there are synced settings, assign them to global loadOptions variable
-// if not assign defaultOptions to the same variable
-// call the function that updates form dom
-const loadSyncedOptions = async () => {
-  await chrome.storage.sync.get("imdbRandomizer_options", (result) => {
-    const options = result.imdbRandomizer_options;
-    if (options) loadOptions = options;
-    else {
-      loadOptions = defaultOptions;
-    }
-    updateFormOptionsOnDom(loadOptions);
-  });
+const loadSyncedOptions = async (): Promise<void> => {
+  const result = await chrome.storage.sync.get("imdbRandomizer_options");
+  const syncedOptions = result.imdbRandomizer_options as
+    | RandomizerOptions
+    | undefined;
+  loadOptions = syncedOptions ?? defaultOptions;
+  updateFormOptionsOnDom(loadOptions);
 };
 
-const constructOptionsFromForm = () => {
-  const showRatings = document.querySelector("#showRatings").checked;
-  const showPoster = document.querySelector("#showPoster").checked;
-  const showPlot = document.querySelector("#showPlot").checked;
-  const showGenres = document.querySelector("#showGenres").checked;
-  const showCredits = document.querySelector("#showCredits").checked;
-  const minIMDBRating = document.querySelector("#minIMDBRating").value;
-  const multimediaType = document.querySelector("#multimediaType").value;
+const isMultimediaFilter = (value: string): value is MultimediaFilter =>
+  value === "movie" || value === "series" || value === "all";
+
+const constructOptionsFromForm = (): RandomizerOptions => {
+  const multimediaTypeValue =
+    getElementById<HTMLSelectElement>("multimediaType").value;
+  const multimediaType = isMultimediaFilter(multimediaTypeValue)
+    ? multimediaTypeValue
+    : defaultOptions.multimediaType;
+
   return {
-    showRatings,
-    showPoster,
-    showPlot,
-    showGenres,
-    showCredits,
-    minIMDBRating,
+    showRatings: getElementById<HTMLInputElement>("showRatings").checked,
+    showPoster: getElementById<HTMLInputElement>("showPoster").checked,
+    showPlot: getElementById<HTMLInputElement>("showPlot").checked,
+    showGenres: getElementById<HTMLInputElement>("showGenres").checked,
+    showCredits: getElementById<HTMLInputElement>("showCredits").checked,
+    minIMDBRating:
+      getElementById<HTMLSelectElement>("minIMDBRating").value,
     multimediaType,
   };
 };
 
-const saveOptionsToSync = () => {
+const saveOptionsToSync = (): void => {
   const options = constructOptionsFromForm();
-  chrome.storage.sync.set(
-    {
-      imdbRandomizer_options: options,
-    },
-    () => {
-      // updateinfoOutputDivMsg("Your randomize options are saved.", "#007bff");
+  void chrome.storage.sync
+    .set({ imdbRandomizer_options: options })
+    .then(() => {
       loadOptions = options;
-    }
-  );
+    })
+    .catch((error: unknown) => {
+      console.error("[IMDb Randomizer] Could not save options.", error);
+    });
 };
 
-inputIds = ['showRatings', 'showPoster', 'showGenres', 'showPlot', 'showCredits', 'minIMDBRating', 'multimediaType']
-inputIds.forEach(id => {
-  const inputWithId = document.querySelector(`#${id}`);
-  inputWithId.addEventListener('change', saveOptionsToSync)
-})
+const inputIds = [
+  "showRatings",
+  "showPoster",
+  "showGenres",
+  "showPlot",
+  "showCredits",
+  "minIMDBRating",
+  "multimediaType",
+] as const;
 
-// document
-//   .querySelector("#save-options")
-//   .addEventListener("click", saveOptionsToSync);
+inputIds.forEach((id) => {
+  getElementById<HTMLInputElement | HTMLSelectElement>(id).addEventListener(
+    "change",
+    saveOptionsToSync
+  );
+});
 
 /* ******************************************
 SAVE/LOAD LAST RANDOMLY CHOSEN MMEDIA TO/FROM CHROME SYNC
 ****************************************** */
-const saveLastRandToSync = (randMmedia) => {
-  chrome.storage.sync.set({ imdbRandomizer_lastRandom: randMmedia });
+
+const saveLastRandToSync = (multimedia: Multimedia): void => {
+  void chrome.storage.sync.set({ imdbRandomizer_lastRandom: multimedia });
 };
 
-const loadLastRand = async () => {
-  await chrome.storage.sync.get("imdbRandomizer_lastRandom", (result) => {
-    const lastRand = result.imdbRandomizer_lastRandom;
-    if (lastRand) {
-      const div = createDivFromMultimedia(lastRand);
-      document.querySelector("#results").appendChild(div);
-    }
-  });
+const loadLastRand = async (): Promise<void> => {
+  const result = await chrome.storage.sync.get("imdbRandomizer_lastRandom");
+  const lastRandom = result.imdbRandomizer_lastRandom as Multimedia | undefined;
+  if (lastRandom) {
+    getElementById<HTMLDivElement>("results").appendChild(
+      createDivFromMultimedia(lastRandom)
+    );
+  }
 };
 
 /* ******************************************
 SAVE/LOAD WATCHLIST TO/FROM LOCAL STORAGE
 ****************************************** */
-const saveWatchlistToLocal = (multimedias) => {
-  chrome.storage.local.set({ imdbRandomizer_watchlist: multimedias });
+
+const saveWatchlistToLocal = (multimedias: Multimedia[]): void => {
+  void chrome.storage.local.set({ imdbRandomizer_watchlist: multimedias });
 };
 
-const loadWatchlistFromLocal = (randomizeFromCacheBtn, listenerCBack) => {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get("imdbRandomizer_watchlist", (result) => {
-      const multimedias = result.imdbRandomizer_watchlist;
-      if (multimedias) {
-        randomizeFromCacheBtn.disabled = false;
-        randomizeFromCacheBtn.addEventListener("click", () =>
-          listenerCBack(multimedias)
-        );
-        resolve(multimedias);
-      } else {
-        randomizeFromCacheBtn.disabled = true;
-        randomizeFromCacheBtn.removeEventListener("click", () =>
-          listenerCBack(multimedias)
-        );
-        resolve(null);
-      }
-    });
-  });
+const loadWatchlistFromLocal = async (
+  randomizeFromCacheButton: HTMLButtonElement,
+  listenerCallback: (multimedias: Multimedia[]) => void
+): Promise<Multimedia[] | null> => {
+  const result = await chrome.storage.local.get("imdbRandomizer_watchlist");
+  const multimedias = result.imdbRandomizer_watchlist as
+    | Multimedia[]
+    | undefined;
+
+  if (randomizeFromCacheListener) {
+    randomizeFromCacheButton.removeEventListener(
+      "click",
+      randomizeFromCacheListener
+    );
+    randomizeFromCacheListener = null;
+  }
+
+  if (!multimedias) {
+    randomizeFromCacheButton.disabled = true;
+    return null;
+  }
+
+  randomizeFromCacheButton.disabled = false;
+  randomizeFromCacheListener = () => listenerCallback(multimedias);
+  randomizeFromCacheButton.addEventListener(
+    "click",
+    randomizeFromCacheListener
+  );
+  return multimedias;
 };
 
 /* ******************************************
 RANDOMLY SELECTING THE MULTIMEDIA
 ****************************************** */
 
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-const selectRandomMultimedia = (mmedias) => {
-  const randInt = getRandomInt(0, mmedias.length - 1);
-  return mmedias[randInt];
+const getRandomInt = (min: number, max: number): number => {
+  const roundedMin = Math.ceil(min);
+  const roundedMax = Math.floor(max);
+  return (
+    Math.floor(Math.random() * (roundedMax - roundedMin + 1)) + roundedMin
+  );
 };
 
-const showRandomMultimedia = (mmedias) => {
-  const mmedia = selectRandomMultimedia(mmedias);
-  const mmediaDiv = createDivFromMultimedia(mmedia);
-  document.querySelector("#results").prepend(mmediaDiv);
-  return mmedia;
+const selectRandomMultimedia = (multimedias: Multimedia[]): Multimedia => {
+  const randomIndex = getRandomInt(0, multimedias.length - 1);
+  return multimedias[randomIndex];
+};
+
+const showRandomMultimedia = (multimedias: Multimedia[]): Multimedia => {
+  const multimedia = selectRandomMultimedia(multimedias);
+  const multimediaDiv = createDivFromMultimedia(multimedia);
+  getElementById<HTMLDivElement>("results").prepend(multimediaDiv);
+  return multimedia;
 };
 
 /* ******************************************
                     MAIN
 ****************************************** */
-const multimediaIsATarget = (mmedia, minRating, mmType) => {
-  return (
-    +mmedia.ratingIMDB >= +minRating &&
-    (mmType === "all" || mmedia.multimediaType === mmType)
+
+const multimediaIsATarget = (
+  multimedia: Multimedia,
+  minRating: string,
+  multimediaType: MultimediaFilter
+): boolean =>
+  Number(multimedia.ratingIMDB) >= Number(minRating) &&
+  (multimediaType === "all" || multimedia.multimediaType === multimediaType);
+
+const filterMultimedias = (multimedias: Multimedia[]): Multimedia[] =>
+  multimedias.filter((multimedia) =>
+    multimediaIsATarget(
+      multimedia,
+      loadOptions.minIMDBRating,
+      loadOptions.multimediaType
+    )
   );
-};
 
-const filterMultimedias = (multimedias) => {
-  const result = loadOptions
-    ? multimedias.filter((mmedia) =>
-        multimediaIsATarget(
-          mmedia,
-          loadOptions.minIMDBRating,
-          loadOptions.multimediaType
-        )
-      )
-    : multimedias;
-  return result;
-};
-
-const main = (multimedias) => {
+const main = (multimedias: Multimedia[]): void => {
   const filteredMultimedias = filterMultimedias(multimedias);
 
-  if (filteredMultimedias.length >= 1) {
-    const randMmedia = showRandomMultimedia(filteredMultimedias);
-    saveLastRandToSync(randMmedia);
+  if (filteredMultimedias.length) {
+    const randomMultimedia = showRandomMultimedia(filteredMultimedias);
+    saveLastRandToSync(randomMultimedia);
   } else {
     updateinfoOutputDivMsg(
       "No titles match the selected filters.",
@@ -316,20 +370,28 @@ const main = (multimedias) => {
 /* ******************************************
               MESSAGE LISTENERS
 ****************************************** */
-const loadWatchlist = async () => {
+
+const loadWatchlist = async (): Promise<void> => {
   await loadWatchlistFromLocal(
-    document.querySelector("#randomizeFromSync"),
-    (multimedias) => main(multimedias)
+    getElementById<HTMLButtonElement>("randomizeFromSync"),
+    main
   );
 };
 
-/* WAITING THE MULTIMEDIA THAT IS PARSED FROM WATCHLIST PAGE
-this listener asserts that the current page is an imdb watchlist
-the validation of this made in background.js before sanding this message to popup.js */
-const handleAllMultimediaRequest = (request) => {
-  const multimedias = JSON.parse(request.payload);
+const parseMultimedias = (payload: string): Multimedia[] => {
+  const value: unknown = JSON.parse(payload);
+  if (!Array.isArray(value)) {
+    throw new Error("The scanned watchlist payload is not an array.");
+  }
+  return value as Multimedia[];
+};
+
+const handleAllMultimediaRequest = (
+  request: MessageOf<"all_multimedia">
+): void => {
+  const multimedias = parseMultimedias(request.payload);
   saveWatchlistToLocal(multimedias);
-  loadWatchlist(); // using it to update dom. gotta refactor this project lol
+  void loadWatchlist();
   main(multimedias);
   console.info(
     `[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`
@@ -338,28 +400,31 @@ const handleAllMultimediaRequest = (request) => {
     "Scanning is done and the RANDOMIZE button is available.",
     "#FF4F00"
   );
-  document.querySelector("#scanAndRandomize").disabled = false;
+  getElementById<HTMLButtonElement>("scanAndRandomize").disabled = false;
 };
 
-//LISTENING FOR THE VALIDATION OF THE WATCHLIST PAGE URL
-//If not a valid page, it will notify the user.
-const handleWatchListValidRequest = (request) => {
-  const itIsWatchlistPage = request.payload;
-  if (itIsWatchlistPage) updateinfoOutputDivMsg("");
-  else
+const handleWatchListValidRequest = (
+  request: MessageOf<"watchlist_url_validation">
+): void => {
+  if (request.payload) {
+    updateinfoOutputDivMsg("");
+  } else {
     updateinfoOutputDivMsg(
       "This is not a watchlist page. If it is please report this as a bug.",
       "rgb(255 0 0)"
     );
+  }
 };
 
-const handleScanningStartedRequest = (request) => {
-  document.querySelector("#scanAndRandomize").disabled = true;
+const handleScanningStartedRequest = (): void => {
+  getElementById<HTMLButtonElement>("scanAndRandomize").disabled = true;
   console.info("[IMDb Randomizer] Watchlist scan started in detailed mode.");
   updateinfoOutputDivMsg("Scanning has started. Hold on there!", "#DC3545");
 };
 
-const handleScanningProgressRequest = (request) => {
+const handleScanningProgressRequest = (
+  request: MessageOf<"scanning_progress">
+): void => {
   const { page, totalPages, titles } = request.payload;
   console.info(
     `[IMDb Randomizer] Page ${page}/${totalPages}: ${titles} titles collected.`
@@ -370,61 +435,77 @@ const handleScanningProgressRequest = (request) => {
   );
 };
 
-const handleScanningFailedRequest = (request) => {
-  document.querySelector("#scanAndRandomize").disabled = false;
+const handleScanningFailedRequest = (
+  request: MessageOf<"scanning_failed">
+): void => {
+  getElementById<HTMLButtonElement>("scanAndRandomize").disabled = false;
   console.error(`[IMDb Randomizer] Scan failed: ${request.payload}`);
   updateinfoOutputDivMsg(`Scanning failed: ${request.payload}`, "rgb(255 0 0)");
 };
 
-chrome.runtime.onMessage.addListener((request, sender) => {
-  const msg = request.message;
-  if (msg) {
-    if (msg === "all_multimedia") handleAllMultimediaRequest(request);
-    else if (msg === "watchlist_url_validation")
+chrome.runtime.onMessage.addListener((request: ExtensionMessage) => {
+  switch (request.message) {
+    case "all_multimedia":
+      handleAllMultimediaRequest(request);
+      break;
+    case "watchlist_url_validation":
       handleWatchListValidRequest(request);
-    else if (msg === "scanning_has_started")
-      handleScanningStartedRequest(request);
-    else if (msg === "scanning_progress")
+      break;
+    case "scanning_has_started":
+      handleScanningStartedRequest();
+      break;
+    case "scanning_progress":
       handleScanningProgressRequest(request);
-    else if (msg === "scanning_failed")
+      break;
+    case "scanning_failed":
       handleScanningFailedRequest(request);
-    else throw new Error("Invalid message");
+      break;
+    case "scan_watchlist":
+      break;
   }
 });
 
 /* ******************************************
 SENDING THE ORDER OF "SCAN AND RANDOMIZE"
 ****************************************** */
-document.getElementById("scanAndRandomize").addEventListener("click", () => {
-  chrome.runtime.sendMessage({
-    message: "scan_watchlist",
-  });
-});
+
+getElementById<HTMLButtonElement>("scanAndRandomize").addEventListener(
+  "click",
+  () => {
+    const message: ExtensionMessage = { message: "scan_watchlist" };
+    void chrome.runtime.sendMessage(message);
+  }
+);
 
 /* ******************************************
-CLEAR SYNC and LOCALSTORAGE (For debugging)
+CLEAR SYNC and LOCAL STORAGE (For debugging)
 ****************************************** */
-const clearSyncAndLocal = () => {
-  // thanks to xOxxOm for the code: https://stackoverflow.com/a/31813035/13184911
-  chrome.storage.sync.clear(function () {
-    var error = chrome.runtime.lastError;
+
+const clearSyncAndLocal = (): void => {
+  chrome.storage.sync.clear(() => {
+    const error = chrome.runtime.lastError;
     if (error) {
       console.error("[IMDb Randomizer] Could not clear synced data.", error);
     }
   });
-  chrome.storage.local.clear(function () {
-    var error = chrome.runtime.lastError;
+  chrome.storage.local.clear(() => {
+    const error = chrome.runtime.lastError;
     if (error) {
       console.error("[IMDb Randomizer] Could not clear local data.", error);
     }
   });
 };
-// might assign to a btn that will also call window.close() to reset the dom easily
 
-(async function () {
+void (async function initializePopup() {
   // clearSyncAndLocal();
+  // createGenresElem is retained for when the scanner returns genres again.
+  void createGenresElem;
+  void clearSyncAndLocal;
 
-  loadSyncedOptions();
-  loadLastRand();
+  await loadSyncedOptions();
+  await loadLastRand();
   await loadWatchlist();
-})();
+})().catch((error: unknown) => {
+  console.error("[IMDb Randomizer] Popup initialization failed.", error);
+  updateinfoOutputDivMsg("The extension could not be initialized.", "rgb(255 0 0)");
+});

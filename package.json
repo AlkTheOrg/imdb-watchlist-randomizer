@@ -7,14 +7,18 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:watch": "vite build --watch --mode development",
-    "dev": "pnpm build:dev && concurrently --kill-others --names vite,chrome \"pnpm build:watch\" \"web-ext run --source-dir dist --target chromium\""
+    "typecheck": "tsc",
+    "typecheck:watch": "tsc --watch --preserveWatchOutput",
+    "dev": "pnpm typecheck && pnpm build:dev && concurrently --kill-others --names vite,types,chrome \"pnpm build:watch\" \"pnpm typecheck:watch\" \"web-ext run --source-dir dist --target chromium\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
+    "@types/chrome": "^0.3.5",
     "concurrently": "^10.0.6",
+    "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "web-ext": "^10.7.0"
   }

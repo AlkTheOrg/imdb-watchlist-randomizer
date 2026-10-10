@@ -1,40 +1,56 @@
-const executeScriptsOnTab = (tabId, files) => {
-  return chrome.scripting
-    .executeScript({
-      target: { tabId: tabId },
+import type { ExtensionMessage } from "./types";
+
+const executeScriptsOnTab = async (
+  tabId: number,
+  files: string[]
+): Promise<void> => {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
       files,
-    })
-    .catch((err) => {
-      console.error("[IMDb Randomizer] Could not start the watchlist scan.", err);
-      chrome.runtime
-        .sendMessage({
-          message: "scanning_failed",
-          payload: err.message || String(err),
-        })
-        .catch(() => {});
     });
+  } catch (error) {
+    console.error(
+      "[IMDb Randomizer] Could not start the watchlist scan.",
+      error
+    );
+    const message: ExtensionMessage = {
+      message: "scanning_failed",
+      payload: error instanceof Error ? error.message : String(error),
+    };
+    void chrome.runtime.sendMessage(message).catch(() => {
+      // The popup may have been closed before the error was reported.
+    });
+  }
 };
 
 // If you have access to someone else's public watchlist, this will still return true.
-const imdbWatchlistUrlRegex = (url) => /.*imdb.com.*watchlist.*/.test(url);
+const imdbWatchlistUrlRegex = (url: string): boolean =>
+  /.*imdb.com.*watchlist.*/.test(url);
 
-const urlIsImdbWatchlistPage = (url) => {
-  const itIsWatchlistPage = imdbWatchlistUrlRegex(url);
-  chrome.runtime.sendMessage({
+const urlIsImdbWatchlistPage = (url?: string): boolean => {
+  const itIsWatchlistPage = Boolean(url && imdbWatchlistUrlRegex(url));
+  const message: ExtensionMessage = {
     message: "watchlist_url_validation",
     payload: itIsWatchlistPage,
+  };
+  void chrome.runtime.sendMessage(message).catch(() => {
+    // The popup may have been closed before validation completed.
   });
   return itIsWatchlistPage;
 };
 
-chrome.runtime.onMessage.addListener((request, sender) => {
-  if (request.message && request.message === "scan_watchlist") {
+chrome.runtime.onMessage.addListener((request: ExtensionMessage) => {
+  if (request.message === "scan_watchlist") {
     chrome.tabs.query(
       { currentWindow: true, active: true },
       function (tabArray) {
         const activeTab = tabArray[0];
-        if (tabArray && activeTab && urlIsImdbWatchlistPage(activeTab.url)) {
-          executeScriptsOnTab(activeTab.id, ["./getMultimedias.js"]);
+        if (
+          activeTab?.id !== undefined &&
+          urlIsImdbWatchlistPage(activeTab.url)
+        ) {
+          void executeScriptsOnTab(activeTab.id, ["./getMultimedias.js"]);
         } else {
           console.warn(
             "[IMDb Randomizer] Scan skipped: the active tab is not an IMDb watchlist."

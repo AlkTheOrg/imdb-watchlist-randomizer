@@ -4,8 +4,8 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => ({
     input: {
         popup: resolve(import.meta.dirname, "popup.html"),
-        background: resolve(import.meta.dirname, "background.js"),
-        getMultimedias: resolve(import.meta.dirname, "getMultimedias.js"),
+        background: resolve(import.meta.dirname, "background.ts"),
+        getMultimedias: resolve(import.meta.dirname, "getMultimedias.ts"),
     },
 
     build: {
