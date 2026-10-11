@@ -96,7 +96,9 @@ export const usePopupController = () => {
   }, []);
 
   const onRandomize = useCallback(() => {
-    if (watchlist) randomize(watchlist);
+    if (watchlist && randomize(watchlist)) {
+      setStatus({ type: "idle" });
+    }
   }, [randomize, watchlist]);
 
   useEffect(() => {
