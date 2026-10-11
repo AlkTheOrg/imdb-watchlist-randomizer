@@ -2,6 +2,9 @@
   "name": "imdb-watchlist-randomizer",
   "version": "1.0.0",
   "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
   "main": "index.js",
   "scripts": {
     "build": "vite build",
@@ -15,10 +18,10 @@
     "typecheck:watch": "tsc --watch --preserveWatchOutput",
     "dev": "pnpm typecheck && pnpm build:dev && concurrently --kill-others --names vite,types,chrome \"pnpm build:watch\" \"pnpm typecheck:watch\" \"web-ext run --source-dir dist --target chromium\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.10.0",
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
   "devDependencies": {
     "@types/chrome": "^0.3.5",
     "@types/react": "^19.3.0",
@@ -30,8 +33,5 @@
     "vite": "^8.3.4",
     "web-ext": "^10.7.0"
   },
-  "dependencies": {
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
-  }
+  "packageManager": "pnpm@10.10.0"
 }

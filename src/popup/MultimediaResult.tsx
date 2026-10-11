@@ -18,9 +18,7 @@ const Ratings = ({ multimedia }: { multimedia: Multimedia }) => (
       <span className="star" />
       {multimedia.ratingIMDB}
     </li>
-    <li
-      className={`mx-auto rating metacritic ${getMetascoreClass(multimedia.ratingMetac)}`}
-    >
+    <li className={`mx-auto rating metacritic ${getMetascoreClass(multimedia.ratingMetac)}`}>
       {multimedia.ratingMetac}
     </li>
   </ul>
@@ -38,11 +36,7 @@ const HeroicContent = ({
     {options.showPoster && (
       <img
         className="poster"
-        src={
-          multimedia.imgSrc.startsWith("http")
-            ? multimedia.imgSrc
-            : "./images/fbackImg.png"
-        }
+        src={multimedia.imgSrc.startsWith("http") ? multimedia.imgSrc : "./images/fbackImg.png"}
         alt={`${multimedia.title} poster`}
       />
     )}
@@ -55,11 +49,7 @@ export const MultimediaResult = ({ result }: MultimediaResultProps) => {
 
   return (
     <article className="randomized-mmedia w-75 text-center mx-auto p-2 pb-3">
-      <a
-        className="title"
-        href={multimedia.multimediaHref}
-        target="_blank"
-      >
+      <a className="title" href={multimedia.multimediaHref} target="_blank">
         {multimedia.title}
       </a>
       <p className="year mb-2">{multimedia.year}</p>
@@ -70,10 +60,7 @@ export const MultimediaResult = ({ result }: MultimediaResultProps) => {
       {options.showCredits && (
         <ul className="credits list-inline m-0">
           {multimedia.credits.map((credit, index) => (
-            <li
-              className="credit list-inline-item"
-              key={`${credit}-${index}`}
-            >
+            <li className="credit list-inline-item" key={`${credit}-${index}`}>
               {credit}
             </li>
           ))}

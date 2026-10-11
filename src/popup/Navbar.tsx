@@ -25,11 +25,7 @@ export const Navbar = () => (
             href="https://github.com/AlkTheOrg/imdb-watchlist-randomizer"
             target="_blank"
           >
-            <img
-              className="github-logo"
-              src="./images/GitHub-Mark-32px.png"
-              alt="GitHub"
-            />
+            <img className="github-logo" src="./images/GitHub-Mark-32px.png" alt="GitHub" />
           </a>
         </li>
       </ul>

@@ -1,7 +1,4 @@
-import type {
-  MultimediaFilter,
-  RandomizerOptions,
-} from "../types";
+import type { MultimediaFilter, RandomizerOptions } from "../types";
 
 type OptionsFormProps = {
   canRandomize: boolean;
@@ -25,7 +22,7 @@ export const OptionsForm = ({
 }: OptionsFormProps) => {
   const updateOption = <Key extends keyof RandomizerOptions>(
     key: Key,
-    value: RandomizerOptions[Key]
+    value: RandomizerOptions[Key],
   ) => {
     onChange({ ...options, [key]: value });
   };
@@ -39,9 +36,7 @@ export const OptionsForm = ({
             className="form-control form-control-sm"
             id="minIMDBRating"
             value={options.minIMDBRating}
-            onChange={(event) =>
-              updateOption("minIMDBRating", event.currentTarget.value)
-            }
+            onChange={(event) => updateOption("minIMDBRating", event.currentTarget.value)}
           >
             <option value="1">All</option>
             <option value="2">2</option>
@@ -142,13 +137,7 @@ type CheckboxOptionProps = {
   onChange: (checked: boolean) => void;
 };
 
-const CheckboxOption = ({
-  checked,
-  hidden = false,
-  id,
-  label,
-  onChange,
-}: CheckboxOptionProps) => (
+const CheckboxOption = ({ checked, hidden = false, id, label, onChange }: CheckboxOptionProps) => (
   <div className={`form-check form-check-inline${hidden ? " d-none" : ""}`}>
     <input
       checked={checked}

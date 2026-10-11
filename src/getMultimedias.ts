@@ -76,20 +76,14 @@ void (async function () {
     if (!seconds) return "";
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.round((seconds % 3600) / 60);
-    return [hours ? `${hours}h` : "", minutes ? `${minutes}m` : ""]
-      .filter(Boolean)
-      .join(" ");
+    return [hours ? `${hours}h` : "", minutes ? `${minutes}m` : ""].filter(Boolean).join(" ");
   };
 
-  const constructMultimediaFromListItem = (
-    listItem: ImdbListItem
-  ): Multimedia => {
+  const constructMultimediaFromListItem = (listItem: ImdbListItem): Multimedia => {
     const year = listItem.releaseYear?.year;
     const endYear = listItem.releaseYear?.endYear;
     const titleType = listItem.titleType?.id || "";
-    const isSeries =
-      listItem.titleType?.canHaveEpisodes ||
-      /series|episode/i.test(titleType);
+    const isSeries = listItem.titleType?.canHaveEpisodes || /series|episode/i.test(titleType);
     const credits = (listItem.principalCreditsV2 || []).map((group) => {
       const names = (group.credits || [])
         .map((credit) => credit.name?.nameText?.text)
@@ -101,14 +95,10 @@ void (async function () {
     return {
       titleId: listItem.id || "",
       title: listItem.titleText?.text || "",
-      multimediaHref: listItem.id
-        ? `https://www.imdb.com/title/${listItem.id}/`
-        : "",
+      multimediaHref: listItem.id ? `https://www.imdb.com/title/${listItem.id}/` : "",
       imgSrc: listItem.primaryImage?.url || "",
       year: year ? `${year}${endYear ? `–${endYear}` : ""}` : "",
-      runtime: formatRuntime(
-        listItem.runtime?.seconds || listItem.originalRuntime?.seconds
-      ),
+      runtime: formatRuntime(listItem.runtime?.seconds || listItem.originalRuntime?.seconds),
       genres: "",
       ratingIMDB: listItem.ratingsSummary?.aggregateRating?.toString() || "",
       ratingMetac: listItem.metacritic?.metascore?.score?.toString() || "",
@@ -141,8 +131,7 @@ void (async function () {
   };
 
   const extractPageData = (doc: Document): WatchlistPageData => {
-    const nextDataScript =
-      doc.querySelector<HTMLScriptElement>("#__NEXT_DATA__");
+    const nextDataScript = doc.querySelector<HTMLScriptElement>("#__NEXT_DATA__");
     if (!nextDataScript) {
       throw new Error("IMDb page data (__NEXT_DATA__) is missing.");
     }
@@ -154,9 +143,7 @@ void (async function () {
       throw new Error("IMDb page data (__NEXT_DATA__) is not valid JSON.");
     }
 
-    const search =
-      nextData.props?.pageProps?.mainColumnData?.predefinedList
-        ?.titleListItemSearch;
+    const search = nextData.props?.pageProps?.mainColumnData?.predefinedList?.titleListItemSearch;
     if (
       !search ||
       !Array.isArray(search.edges) ||
@@ -166,9 +153,7 @@ void (async function () {
       throw new Error("IMDb watchlist data has an unexpected structure.");
     }
 
-    const items = search.edges.map((edge) =>
-      constructMultimediaFromListItem(edge.listItem)
-    );
+    const items = search.edges.map((edge) => constructMultimediaFromListItem(edge.listItem));
     if (items.some((item) => !item.titleId || !item.title)) {
       throw new Error("IMDb returned an incomplete title entry.");
     }
@@ -200,16 +185,14 @@ void (async function () {
 
       if (!pageData.items.length) {
         throw new Error(
-          "IMDb returned no titles. Make sure the watchlist is visible and try again."
+          "IMDb returned no titles. Make sure the watchlist is visible and try again.",
         );
       }
       if (page === 1) {
         expectedTotal = pageData.total;
         totalPages = Math.ceil(expectedTotal / pageData.items.length);
         if (totalPages > MAX_PAGES) {
-          throw new Error(
-            `IMDb returned an unexpected page count: ${totalPages}.`
-          );
+          throw new Error(`IMDb returned an unexpected page count: ${totalPages}.`);
         }
       }
 
@@ -222,7 +205,7 @@ void (async function () {
 
       console.info(
         `[IMDb Randomizer] Page ${page}/${totalPages}: ` +
-          `${pageData.items.length} titles read (${multimedias.length} total).`
+          `${pageData.items.length} titles read (${multimedias.length} total).`,
       );
 
       notify({
@@ -238,14 +221,12 @@ void (async function () {
     if (!multimedias.length) throw new Error("No watchlist titles could be read.");
     if (multimedias.length !== expectedTotal) {
       throw new Error(
-        `IMDb reports ${expectedTotal} titles, but only ${multimedias.length} were read.`
+        `IMDb reports ${expectedTotal} titles, but only ${multimedias.length} were read.`,
       );
     }
 
     await chrome.storage.local.set({ imdbRandomizer_watchlist: multimedias });
-    console.info(
-      `[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`
-    );
+    console.info(`[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`);
     notify({ message: "all_multimedia", payload: JSON.stringify(multimedias) });
   } catch (error) {
     console.error("[IMDb Randomizer] Watchlist scan failed.", error);

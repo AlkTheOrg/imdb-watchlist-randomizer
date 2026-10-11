@@ -5,15 +5,8 @@ import { StatusMessage } from "./StatusMessage";
 import { usePopupController } from "./usePopupController";
 
 export const PopupApp = () => {
-  const {
-    canRandomize,
-    onOptionsChange,
-    onRandomize,
-    onScan,
-    options,
-    results,
-    status,
-  } = usePopupController();
+  const { canRandomize, onOptionsChange, onRandomize, onScan, options, results, status } =
+    usePopupController();
   const isScanning = status.type === "starting" || status.type === "scanning";
 
   return (

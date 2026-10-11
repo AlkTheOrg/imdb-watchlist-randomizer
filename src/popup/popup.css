@@ -13,7 +13,8 @@ body {
   margin: 5px;
 }
 
-.btn:focus,.btn:active {
+.btn:focus,
+.btn:active {
   outline: none !important;
   box-shadow: none;
 }
@@ -38,7 +39,7 @@ form {
 
 a {
   text-decoration: none;
-  transition: .2s;
+  transition: 0.2s;
 }
 
 nav > p {
@@ -48,7 +49,7 @@ nav > p {
 
 nav > p,
 nav a {
-  color: #121212; 
+  color: #121212;
 }
 
 nav a:hover {
@@ -56,11 +57,11 @@ nav a:hover {
 }
 
 #githubHref {
-  filter: sepia(1) saturate(190) hue-rotate(269deg) brightness(1)
+  filter: sepia(1) saturate(190) hue-rotate(269deg) brightness(1);
 }
 
 #githubHref:hover {
-  filter: sepia(1) saturate(190) hue-rotate(269deg) brightness(.6)
+  filter: sepia(1) saturate(190) hue-rotate(269deg) brightness(0.6);
   /* filter: sepia(1) saturate(50) hue-rotate(200deg) brightness(1.2); */
 }
 
@@ -99,8 +100,8 @@ nav a:hover {
 .randomized-mmedia {
   background: #931aff;
 
-color: rgb(255, 255, 255);
-border-radius: 5px;
+  color: rgb(255, 255, 255);
+  border-radius: 5px;
   margin-top: 18px;
 }
 
@@ -108,88 +109,88 @@ border-radius: 5px;
   font-size: 24px;
   text-decoration: none;
   /* color: rgb(87, 153, 239) */
-  color: #DBFF00;
+  color: #dbff00;
 }
 
 .title:hover {
   text-decoration: none;
-  color: #E8DA0C;
+  color: #e8da0c;
 }
 
 .year {
   margin-top: -2px !important;
 }
 
-  /* HEROIC CONTENT */
+/* HEROIC CONTENT */
 
-  .heroic-content {
-    position: relative;
-    min-height: 40px;
-  }
+.heroic-content {
+  position: relative;
+  min-height: 40px;
+}
 
-  .poster {
-    width: 96px;
-    height: 142px;
-    object-fit: cover;
-  }
+.poster {
+  width: 96px;
+  height: 142px;
+  object-fit: cover;
+}
 
-  .ratings,
-  .runtime {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-  }
+.ratings,
+.runtime {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
 
-  .ratings {
-    list-style: none;
-    padding: 0;
-    left: 8%;
-  }
+.ratings {
+  list-style: none;
+  padding: 0;
+  left: 8%;
+}
 
-  .rating {
-    font-size: 16px;
-    text-decoration: none;
-  }
+.rating {
+  font-size: 16px;
+  text-decoration: none;
+}
 
-  .ratings .star {
-    background: url("/images/star.png");
-    display: inline-block;
-    height: 16px;
-    width: 16px;
-    margin-right: 4px;
-  }
+.ratings .star {
+  background: url("/images/star.png");
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  margin-right: 4px;
+}
 
-  .metacritic {
-    font-size: 14px;
-    width: 24px;
-    margin: 1.5px 0 0 0;
-    border-radius: 2px;
-    color: white;
-  }
+.metacritic {
+  font-size: 14px;
+  width: 24px;
+  margin: 1.5px 0 0 0;
+  border-radius: 2px;
+  color: white;
+}
 
-  .metacritic-favorable {
-    background-color: #66CC33;
-  }
+.metacritic-favorable {
+  background-color: #66cc33;
+}
 
-  .metacritic-average {
-    background-color: #FFCC33;
-  }
+.metacritic-average {
+  background-color: #ffcc33;
+}
 
-  .metacritic-unfavorable {
-    background-color: #FF0000;
-  }
+.metacritic-unfavorable {
+  background-color: #ff0000;
+}
 
-  .runtime {
-    right: 8%;
-    margin-bottom: 5px;
-  }
-  .plot {
-    font-size: 14px;
-  }
-  .credits {
-    font-size: 12px;
-    color:  #FFFF99;
-  }
+.runtime {
+  right: 8%;
+  margin-bottom: 5px;
+}
+.plot {
+  font-size: 14px;
+}
+.credits {
+  font-size: 12px;
+  color: #ffff99;
+}
 
 /******************
   FOOTER

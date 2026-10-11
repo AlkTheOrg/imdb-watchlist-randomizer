@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-  ExtensionMessage,
-  Multimedia,
-  MultimediaFilter,
-  RandomizerOptions,
-} from "../types";
+import type { ExtensionMessage, Multimedia, MultimediaFilter, RandomizerOptions } from "../types";
 
 export type PopupStatus =
   | { type: "idle" }
@@ -39,7 +34,7 @@ const defaultOptions: RandomizerOptions = {
 const multimediaIsATarget = (
   multimedia: Multimedia,
   minRating: string,
-  multimediaType: MultimediaFilter
+  multimediaType: MultimediaFilter,
 ): boolean =>
   Number(multimedia.ratingIMDB) >= Number(minRating) &&
   (multimediaType === "all" || multimedia.multimediaType === multimediaType);
@@ -59,28 +54,21 @@ export const usePopupController = () => {
   const [status, setStatus] = useState<PopupStatus>({ type: "idle" });
   const nextResultId = useRef(0);
 
-  const addResult = useCallback(
-    (multimedia: Multimedia, resultOptions: RandomizerOptions) => {
-      setResults((currentResults) => [
-        {
-          id: nextResultId.current++,
-          multimedia,
-          options: resultOptions,
-        },
-        ...currentResults,
-      ]);
-    },
-    []
-  );
+  const addResult = useCallback((multimedia: Multimedia, resultOptions: RandomizerOptions) => {
+    setResults((currentResults) => [
+      {
+        id: nextResultId.current++,
+        multimedia,
+        options: resultOptions,
+      },
+      ...currentResults,
+    ]);
+  }, []);
 
   const randomize = useCallback(
     (multimedias: Multimedia[]) => {
       const filteredMultimedias = multimedias.filter((multimedia) =>
-        multimediaIsATarget(
-          multimedia,
-          options.minIMDBRating,
-          options.multimediaType
-        )
+        multimediaIsATarget(multimedia, options.minIMDBRating, options.multimediaType),
       );
 
       if (!filteredMultimedias.length) {
@@ -97,13 +85,10 @@ export const usePopupController = () => {
       void chrome.storage.sync
         .set({ imdbRandomizer_lastRandom: multimedia })
         .catch((error: unknown) => {
-          console.error(
-            "[IMDb Randomizer] Could not save the selected title.",
-            error
-          );
+          console.error("[IMDb Randomizer] Could not save the selected title.", error);
         });
     },
-    [addResult, options]
+    [addResult, options],
   );
 
   const onOptionsChange = useCallback((nextOptions: RandomizerOptions) => {
@@ -136,25 +121,16 @@ export const usePopupController = () => {
 
     const initializePopup = async () => {
       const [syncedStorage, localStorage] = await Promise.all([
-        chrome.storage.sync.get([
-          "imdbRandomizer_options",
-          "imdbRandomizer_lastRandom",
-        ]),
+        chrome.storage.sync.get(["imdbRandomizer_options", "imdbRandomizer_lastRandom"]),
         chrome.storage.local.get("imdbRandomizer_watchlist"),
       ]);
 
       if (!isActive) return;
 
       const loadedOptions =
-        (syncedStorage.imdbRandomizer_options as
-          | RandomizerOptions
-          | undefined) ?? defaultOptions;
-      const lastRandom = syncedStorage.imdbRandomizer_lastRandom as
-        | Multimedia
-        | undefined;
-      const cachedWatchlist = localStorage.imdbRandomizer_watchlist as
-        | Multimedia[]
-        | undefined;
+        (syncedStorage.imdbRandomizer_options as RandomizerOptions | undefined) ?? defaultOptions;
+      const lastRandom = syncedStorage.imdbRandomizer_lastRandom as Multimedia | undefined;
+      const cachedWatchlist = localStorage.imdbRandomizer_watchlist as Multimedia[] | undefined;
 
       setOptions(loadedOptions);
       setWatchlist(cachedWatchlist ?? null);
@@ -184,35 +160,27 @@ export const usePopupController = () => {
           void chrome.storage.local
             .set({ imdbRandomizer_watchlist: multimedias })
             .catch((error: unknown) => {
-              console.error(
-                "[IMDb Randomizer] Could not cache the watchlist.",
-                error
-              );
-          });
+              console.error("[IMDb Randomizer] Could not cache the watchlist.", error);
+            });
           randomize(multimedias);
           setStatus({
             type: "success",
             titles: multimedias.length,
           });
-          console.info(
-            `[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`
-          );
+          console.info(`[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`);
           break;
         }
         case "watchlist_url_validation":
           if (!request.payload) {
             setStatus({
               type: "error",
-              message:
-                "This is not a watchlist page. If it is please report this as a bug.",
+              message: "This is not a watchlist page. If it is please report this as a bug.",
             });
           }
           break;
         case "scanning_has_started":
           setStatus({ type: "scanning" });
-          console.info(
-            "[IMDb Randomizer] Watchlist scan started in detailed mode."
-          );
+          console.info("[IMDb Randomizer] Watchlist scan started in detailed mode.");
           break;
         case "scanning_progress": {
           const { page, totalPages, titles } = request.payload;
@@ -220,9 +188,7 @@ export const usePopupController = () => {
             type: "scanning",
             progress: { page, totalPages, titles },
           });
-          console.info(
-            `[IMDb Randomizer] Page ${page}/${totalPages}: ${titles} titles collected.`
-          );
+          console.info(`[IMDb Randomizer] Page ${page}/${totalPages}: ${titles} titles collected.`);
           break;
         }
         case "scanning_failed":

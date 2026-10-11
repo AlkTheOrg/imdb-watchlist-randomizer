@@ -2,24 +2,24 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig(({ mode }) => ({
-    input: {
-        popup: resolve(import.meta.dirname, "popup.html"),
-        background: resolve(import.meta.dirname, "src/background.ts"),
-        getMultimedias: resolve(import.meta.dirname, "src/getMultimedias.ts"),
-    },
+  input: {
+    popup: resolve(import.meta.dirname, "popup.html"),
+    background: resolve(import.meta.dirname, "src/background.ts"),
+    getMultimedias: resolve(import.meta.dirname, "src/getMultimedias.ts"),
+  },
 
-    build: {
-        outDir: "dist",
-        emptyOutDir: true,
-        minify: mode !== "development",
-        sourcemap: mode === "development",
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    minify: mode !== "development",
+    sourcemap: mode === "development",
 
-        rolldownOptions: {
-            output: {
-                entryFileNames: "[name].js",
-                chunkFileNames: "chunks/[name]-[hash].js",
-                assetFileNames: "assets/[name]-[hash][extname]",
-            },
-        },
+    rolldownOptions: {
+      output: {
+        entryFileNames: "[name].js",
+        chunkFileNames: "chunks/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+      },
     },
+  },
 }));

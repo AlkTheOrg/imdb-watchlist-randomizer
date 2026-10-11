@@ -5,7 +5,7 @@ type StatusMessageProps = {
 };
 
 const getStatusView = (
-  status: PopupStatus
+  status: PopupStatus,
 ): { message: string; tone: "default" | "error" | "progress" | "success" } => {
   switch (status.type) {
     case "idle":
