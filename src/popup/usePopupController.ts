@@ -40,14 +40,6 @@ const defaultOptions: RandomizerOptions = {
   showPlot: true,
 };
 
-const parseMultimedias = (payload: string): Multimedia[] => {
-  const value: unknown = JSON.parse(payload);
-  if (!Array.isArray(value)) {
-    throw new Error("The scanned watchlist payload is not an array.");
-  }
-  return value as Multimedia[];
-};
-
 export const usePopupController = () => {
   const [options, setOptions] = useState<RandomizerOptions>(defaultOptions);
   const [watchlist, setWatchlist] = useState<Multimedia[] | null>(null);
@@ -142,7 +134,7 @@ export const usePopupController = () => {
     const handleMessage = (request: ExtensionMessage) => {
       switch (request.message) {
         case "all_multimedia": {
-          const multimedias = parseMultimedias(request.payload);
+          const multimedias = request.payload;
           setWatchlist(multimedias);
           void saveWatchlist(multimedias).catch((error: unknown) => {
             console.error("[IMDb Randomizer] Could not cache the watchlist.", error);

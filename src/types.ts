@@ -36,7 +36,7 @@ export type ExtensionMessage =
       payload: { page: number; totalPages: number; titles: number };
     }
   | { message: "scanning_failed"; payload: string }
-  | { message: "all_multimedia"; payload: string };
+  | { message: "all_multimedia"; payload: Multimedia[] };
 
 export type ScannerMessage = Exclude<
   ExtensionMessage,

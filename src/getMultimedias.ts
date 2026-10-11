@@ -228,7 +228,7 @@ void (async function () {
 
     await saveWatchlist(multimedias);
     console.info(`[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`);
-    notify({ message: "all_multimedia", payload: JSON.stringify(multimedias) });
+    notify({ message: "all_multimedia", payload: multimedias });
   } catch (error) {
     console.error("[IMDb Randomizer] Watchlist scan failed.", error);
     notify({
