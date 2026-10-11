@@ -58,6 +58,16 @@ The generated extension is written to `dist/`. It can also be loaded manually fr
 
 Unit tests cover the pure randomization logic. For extension behavior changes, run `pnpm dev` and test the extension manually against an IMDb watchlist.
 
+## Commit messages
+
+Use the Conventional Commits-style format `<type>: <imperative summary>`. Common types include `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `build`, `ci`, and `chore`.
+
+For example:
+
+```text
+feat: add Firefox manifest support
+```
+
 ## Versioning
 
 `package.json` is the source of truth for the project version. Use the version command to update it together with `public/manifest.json`:
