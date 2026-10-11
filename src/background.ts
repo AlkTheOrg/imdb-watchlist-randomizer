@@ -18,10 +18,21 @@ const executeScannerOnTab = async (tabId: number): Promise<void> => {
 };
 
 // If you have access to someone else's public watchlist, this will still return true.
-const imdbWatchlistUrlRegex = (url: string): boolean => /.*imdb.com.*watchlist.*/.test(url);
+const isImdbWatchlistUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      url.hostname === "www.imdb.com" &&
+      /^\/user\/[^/]+\/watchlist\/?$/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+};
 
 const urlIsImdbWatchlistPage = (url?: string): boolean => {
-  const itIsWatchlistPage = Boolean(url && imdbWatchlistUrlRegex(url));
+  const itIsWatchlistPage = Boolean(url && isImdbWatchlistUrl(url));
   void reportWatchlistValidation(itIsWatchlistPage).catch(() => {
     // The popup may have been closed before validation completed.
   });

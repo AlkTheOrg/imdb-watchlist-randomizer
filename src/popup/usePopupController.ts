@@ -67,7 +67,7 @@ export const usePopupController = () => {
   }, []);
 
   const randomize = useCallback(
-    (multimedias: Multimedia[]) => {
+    (multimedias: Multimedia[]): boolean => {
       const multimedia = pickRandomMultimedia(multimedias, options);
 
       if (!multimedia) {
@@ -75,13 +75,14 @@ export const usePopupController = () => {
           type: "error",
           message: "No titles match the selected filters.",
         });
-        return;
+        return false;
       }
 
       addResult(multimedia, options);
       void saveLastRandom(multimedia).catch((error: unknown) => {
         console.error("[IMDb Randomizer] Could not save the selected title.", error);
       });
+      return true;
     },
     [addResult, options],
   );
@@ -146,11 +147,12 @@ export const usePopupController = () => {
           void saveWatchlist(multimedias).catch((error: unknown) => {
             console.error("[IMDb Randomizer] Could not cache the watchlist.", error);
           });
-          randomize(multimedias);
-          setStatus({
-            type: "success",
-            titles: multimedias.length,
-          });
+          if (randomize(multimedias)) {
+            setStatus({
+              type: "success",
+              titles: multimedias.length,
+            });
+          }
           console.info(`[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`);
           break;
         }

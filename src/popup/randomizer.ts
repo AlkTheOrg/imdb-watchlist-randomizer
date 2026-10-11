@@ -6,7 +6,8 @@ export const multimediaMatchesFilters = (
   multimedia: Multimedia,
   filters: RandomizerFilters,
 ): boolean =>
-  Number(multimedia.ratingIMDB) >= Number(filters.minIMDBRating) &&
+  (filters.minIMDBRating === "1" ||
+    Number(multimedia.ratingIMDB) >= Number(filters.minIMDBRating)) &&
   (filters.multimediaType === "all" || multimedia.multimediaType === filters.multimediaType);
 
 export const pickRandomMultimedia = (
