@@ -3,7 +3,8 @@ import type {
   Multimedia,
   MultimediaFilter,
   RandomizerOptions,
-} from "./types";
+} from "../types";
+import "./popup.css";
 
 type MessageOf<Type extends ExtensionMessage["message"]> = Extract<
   ExtensionMessage,
