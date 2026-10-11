@@ -110,7 +110,8 @@ export const OptionsForm = ({
       </div>
 
       <div className="container text-center">
-        <div className="btn-group randomize-btns" role="group">
+        <fieldset className="btn-group randomize-btns">
+          <legend className="sr-only">Randomization actions</legend>
           <button
             type="button"
             disabled={isScanning}
@@ -127,7 +128,7 @@ export const OptionsForm = ({
           >
             RANDOMIZE
           </button>
-        </div>
+        </fieldset>
       </div>
     </form>
   );
