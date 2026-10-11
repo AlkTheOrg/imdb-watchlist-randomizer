@@ -12,13 +12,5 @@
   "ignorePatterns": ["dist", "node_modules"],
   "rules": {
     "react/react-in-jsx-scope": "off"
-  },
-  "overrides": [
-    {
-      "files": ["src/getMultimedias.ts"],
-      "rules": {
-        "unicorn/consistent-function-scoping": "off"
-      }
-    }
-  ]
+  }
 }
