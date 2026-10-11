@@ -96,7 +96,6 @@ const constructMultimediaFromListItem = (listItem: ImdbListItem): Multimedia => 
     imgSrc: listItem.primaryImage?.url || "",
     year: year ? `${year}${endYear ? `–${endYear}` : ""}` : "",
     runtime: formatRuntime(listItem.runtime?.seconds || listItem.originalRuntime?.seconds),
-    genres: "",
     ratingIMDB: listItem.ratingsSummary?.aggregateRating?.toString() || "",
     ratingMetac: listItem.metacritic?.metascore?.score?.toString() || "",
     plot: listItem.plot?.plotText?.plainText || "",

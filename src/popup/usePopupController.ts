@@ -33,7 +33,6 @@ const defaultOptions: RandomizerOptions = {
   minIMDBRating: "1",
   multimediaType: "movie",
   showCredits: true,
-  showGenres: false,
   showPoster: true,
   showRatings: true,
   showPlot: true,

@@ -90,13 +90,6 @@ export const OptionsForm = ({
           onChange={(checked) => updateOption("showPlot", checked)}
         />
         <CheckboxOption
-          checked={options.showGenres}
-          hidden
-          id="showGenres"
-          label="Genres"
-          onChange={(checked) => updateOption("showGenres", checked)}
-        />
-        <CheckboxOption
           checked={options.showCredits}
           id="showCredits"
           label="Credits"
@@ -131,14 +124,13 @@ export const OptionsForm = ({
 
 type CheckboxOptionProps = {
   checked: boolean;
-  hidden?: boolean;
   id: string;
   label: string;
   onChange: (checked: boolean) => void;
 };
 
-const CheckboxOption = ({ checked, hidden = false, id, label, onChange }: CheckboxOptionProps) => (
-  <div className={`form-check form-check-inline${hidden ? " d-none" : ""}`}>
+const CheckboxOption = ({ checked, id, label, onChange }: CheckboxOptionProps) => (
+  <div className="form-check form-check-inline">
     <input
       checked={checked}
       className="form-check-input"

@@ -13,7 +13,6 @@ const multimedia = (
   imgSrc: "",
   year: "",
   runtime: "",
-  genres: "",
   ratingIMDB,
   ratingMetac: "",
   plot: "",

@@ -7,7 +7,6 @@ export type Multimedia = {
   imgSrc: string;
   year: string;
   runtime: string;
-  genres: string;
   ratingIMDB: string;
   ratingMetac: string;
   plot: string;
@@ -21,7 +20,6 @@ export type RandomizerOptions = {
   minIMDBRating: string;
   multimediaType: MultimediaFilter;
   showCredits: boolean;
-  showGenres: boolean;
   showPoster: boolean;
   showRatings: boolean;
   showPlot: boolean;
