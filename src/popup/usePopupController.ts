@@ -108,7 +108,10 @@ export const usePopupController = () => {
 
       if (!isActive) return;
 
-      const loadedOptions = popupState.options ?? defaultOptions;
+      const loadedOptions: RandomizerOptions = {
+        ...defaultOptions,
+        ...popupState.options,
+      };
 
       setOptions(loadedOptions);
       setWatchlist(popupState.watchlist ?? null);

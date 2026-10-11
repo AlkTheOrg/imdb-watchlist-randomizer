@@ -8,7 +8,7 @@ const storageKeys = {
 
 export type PopupState = {
   lastRandom?: Multimedia;
-  options?: RandomizerOptions;
+  options?: Partial<RandomizerOptions>;
   watchlist?: Multimedia[];
 };
 
@@ -19,7 +19,7 @@ export const loadPopupState = async (): Promise<PopupState> => {
   ]);
 
   return {
-    options: syncedStorage[storageKeys.options] as RandomizerOptions | undefined,
+    options: syncedStorage[storageKeys.options] as Partial<RandomizerOptions> | undefined,
     lastRandom: syncedStorage[storageKeys.lastRandom] as Multimedia | undefined,
     watchlist: localStorage[storageKeys.watchlist] as Multimedia[] | undefined,
   };
