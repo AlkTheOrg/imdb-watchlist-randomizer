@@ -6,6 +6,9 @@ import type {
 } from "../types";
 import "./popup.css";
 
+import { createRoot } from "react-dom/client";
+import { PopupApp } from "./PopupApp";
+
 type MessageOf<Type extends ExtensionMessage["message"]> = Extract<
   ExtensionMessage,
   { message: Type }
@@ -31,6 +34,8 @@ const getElementById = <ElementType extends HTMLElement>(
   if (!element) throw new Error(`Required popup element #${id} is missing.`);
   return element as ElementType;
 };
+
+createRoot(getElementById<HTMLDivElement>("root")).render(<PopupApp />);
 
 // Updates the status area used for errors and scan progress.
 const updateinfoOutputDivMsg = (msg: string, color = ""): void => {
