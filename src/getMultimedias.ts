@@ -1,4 +1,5 @@
 import type { Multimedia, ScannerMessage } from "./types";
+import { saveWatchlist, sendScannerMessage } from "./extensionApi/scanner";
 
 type ImdbText = {
   text?: string;
@@ -165,7 +166,7 @@ void (async function () {
   };
 
   const notify = (message: ScannerMessage): void => {
-    void chrome.runtime.sendMessage(message).catch(() => {
+    void sendScannerMessage(message).catch(() => {
       // The popup may have been closed while the scan was running.
     });
   };
@@ -225,7 +226,7 @@ void (async function () {
       );
     }
 
-    await chrome.storage.local.set({ imdbRandomizer_watchlist: multimedias });
+    await saveWatchlist(multimedias);
     console.info(`[IMDb Randomizer] Scan complete: ${multimedias.length} titles cached.`);
     notify({ message: "all_multimedia", payload: JSON.stringify(multimedias) });
   } catch (error) {

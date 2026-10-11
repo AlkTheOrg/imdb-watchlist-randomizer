@@ -1,18 +1,17 @@
-import type { ExtensionMessage } from "./types";
+import {
+  getActiveTab,
+  injectWatchlistScanner,
+  onWatchlistScanRequested,
+  reportScanningFailure,
+  reportWatchlistValidation,
+} from "./extensionApi/background";
 
-const executeScriptsOnTab = async (tabId: number, files: string[]): Promise<void> => {
+const executeScannerOnTab = async (tabId: number): Promise<void> => {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files,
-    });
+    await injectWatchlistScanner(tabId);
   } catch (error) {
     console.error("[IMDb Randomizer] Could not start the watchlist scan.", error);
-    const message: ExtensionMessage = {
-      message: "scanning_failed",
-      payload: error instanceof Error ? error.message : String(error),
-    };
-    void chrome.runtime.sendMessage(message).catch(() => {
+    void reportScanningFailure(error).catch(() => {
       // The popup may have been closed before the error was reported.
     });
   }
@@ -23,25 +22,26 @@ const imdbWatchlistUrlRegex = (url: string): boolean => /.*imdb.com.*watchlist.*
 
 const urlIsImdbWatchlistPage = (url?: string): boolean => {
   const itIsWatchlistPage = Boolean(url && imdbWatchlistUrlRegex(url));
-  const message: ExtensionMessage = {
-    message: "watchlist_url_validation",
-    payload: itIsWatchlistPage,
-  };
-  void chrome.runtime.sendMessage(message).catch(() => {
+  void reportWatchlistValidation(itIsWatchlistPage).catch(() => {
     // The popup may have been closed before validation completed.
   });
   return itIsWatchlistPage;
 };
 
-chrome.runtime.onMessage.addListener((request: ExtensionMessage) => {
-  if (request.message === "scan_watchlist") {
-    chrome.tabs.query({ currentWindow: true, active: true }, function (tabArray) {
-      const activeTab = tabArray[0];
-      if (activeTab?.id !== undefined && urlIsImdbWatchlistPage(activeTab.url)) {
-        void executeScriptsOnTab(activeTab.id, ["./getMultimedias.js"]);
-      } else {
-        console.warn("[IMDb Randomizer] Scan skipped: the active tab is not an IMDb watchlist.");
-      }
-    });
+const scanActiveWatchlist = async (): Promise<void> => {
+  const activeTab = await getActiveTab();
+  if (activeTab?.id !== undefined && urlIsImdbWatchlistPage(activeTab.url)) {
+    await executeScannerOnTab(activeTab.id);
+  } else {
+    console.warn("[IMDb Randomizer] Scan skipped: the active tab is not an IMDb watchlist.");
   }
+};
+
+onWatchlistScanRequested(() => {
+  void scanActiveWatchlist().catch((error: unknown) => {
+    console.error("[IMDb Randomizer] Could not inspect the active tab.", error);
+    void reportScanningFailure(error).catch(() => {
+      // The popup may have been closed before the error was reported.
+    });
+  });
 });

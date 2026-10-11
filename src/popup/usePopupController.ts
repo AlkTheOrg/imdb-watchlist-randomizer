@@ -1,4 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  loadPopupState,
+  onExtensionMessage,
+  requestWatchlistScan,
+  saveLastRandom,
+  saveOptions,
+  saveWatchlist,
+} from "../extensionApi/popup";
 import type { ExtensionMessage, Multimedia, RandomizerOptions } from "../types";
 import { pickRandomMultimedia } from "./randomizer";
 
@@ -71,28 +79,23 @@ export const usePopupController = () => {
       }
 
       addResult(multimedia, options);
-      void chrome.storage.sync
-        .set({ imdbRandomizer_lastRandom: multimedia })
-        .catch((error: unknown) => {
-          console.error("[IMDb Randomizer] Could not save the selected title.", error);
-        });
+      void saveLastRandom(multimedia).catch((error: unknown) => {
+        console.error("[IMDb Randomizer] Could not save the selected title.", error);
+      });
     },
     [addResult, options],
   );
 
   const onOptionsChange = useCallback((nextOptions: RandomizerOptions) => {
     setOptions(nextOptions);
-    void chrome.storage.sync
-      .set({ imdbRandomizer_options: nextOptions })
-      .catch((error: unknown) => {
-        console.error("[IMDb Randomizer] Could not save options.", error);
-      });
+    void saveOptions(nextOptions).catch((error: unknown) => {
+      console.error("[IMDb Randomizer] Could not save options.", error);
+    });
   }, []);
 
   const onScan = useCallback(() => {
     setStatus({ type: "starting" });
-    const message: ExtensionMessage = { message: "scan_watchlist" };
-    void chrome.runtime.sendMessage(message).catch((error: unknown) => {
+    void requestWatchlistScan().catch((error: unknown) => {
       console.error("[IMDb Randomizer] Could not start the scan.", error);
       setStatus({
         type: "error",
@@ -109,21 +112,15 @@ export const usePopupController = () => {
     let isActive = true;
 
     const initializePopup = async () => {
-      const [syncedStorage, localStorage] = await Promise.all([
-        chrome.storage.sync.get(["imdbRandomizer_options", "imdbRandomizer_lastRandom"]),
-        chrome.storage.local.get("imdbRandomizer_watchlist"),
-      ]);
+      const popupState = await loadPopupState();
 
       if (!isActive) return;
 
-      const loadedOptions =
-        (syncedStorage.imdbRandomizer_options as RandomizerOptions | undefined) ?? defaultOptions;
-      const lastRandom = syncedStorage.imdbRandomizer_lastRandom as Multimedia | undefined;
-      const cachedWatchlist = localStorage.imdbRandomizer_watchlist as Multimedia[] | undefined;
+      const loadedOptions = popupState.options ?? defaultOptions;
 
       setOptions(loadedOptions);
-      setWatchlist(cachedWatchlist ?? null);
-      if (lastRandom) addResult(lastRandom, loadedOptions);
+      setWatchlist(popupState.watchlist ?? null);
+      if (popupState.lastRandom) addResult(popupState.lastRandom, loadedOptions);
     };
 
     void initializePopup().catch((error: unknown) => {
@@ -146,11 +143,9 @@ export const usePopupController = () => {
         case "all_multimedia": {
           const multimedias = parseMultimedias(request.payload);
           setWatchlist(multimedias);
-          void chrome.storage.local
-            .set({ imdbRandomizer_watchlist: multimedias })
-            .catch((error: unknown) => {
-              console.error("[IMDb Randomizer] Could not cache the watchlist.", error);
-            });
+          void saveWatchlist(multimedias).catch((error: unknown) => {
+            console.error("[IMDb Randomizer] Could not cache the watchlist.", error);
+          });
           randomize(multimedias);
           setStatus({
             type: "success",
@@ -192,8 +187,7 @@ export const usePopupController = () => {
       }
     };
 
-    chrome.runtime.onMessage.addListener(handleMessage);
-    return () => chrome.runtime.onMessage.removeListener(handleMessage);
+    return onExtensionMessage(handleMessage);
   }, [randomize]);
 
   return {
