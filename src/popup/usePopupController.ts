@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ExtensionMessage, Multimedia, MultimediaFilter, RandomizerOptions } from "../types";
+import type { ExtensionMessage, Multimedia, RandomizerOptions } from "../types";
+import { pickRandomMultimedia } from "./randomizer";
 
 export type PopupStatus =
   | { type: "idle" }
@@ -31,14 +32,6 @@ const defaultOptions: RandomizerOptions = {
   showPlot: true,
 };
 
-const multimediaIsATarget = (
-  multimedia: Multimedia,
-  minRating: string,
-  multimediaType: MultimediaFilter,
-): boolean =>
-  Number(multimedia.ratingIMDB) >= Number(minRating) &&
-  (multimediaType === "all" || multimedia.multimediaType === multimediaType);
-
 const parseMultimedias = (payload: string): Multimedia[] => {
   const value: unknown = JSON.parse(payload);
   if (!Array.isArray(value)) {
@@ -67,11 +60,9 @@ export const usePopupController = () => {
 
   const randomize = useCallback(
     (multimedias: Multimedia[]) => {
-      const filteredMultimedias = multimedias.filter((multimedia) =>
-        multimediaIsATarget(multimedia, options.minIMDBRating, options.multimediaType),
-      );
+      const multimedia = pickRandomMultimedia(multimedias, options);
 
-      if (!filteredMultimedias.length) {
+      if (!multimedia) {
         setStatus({
           type: "error",
           message: "No titles match the selected filters.",
@@ -79,8 +70,6 @@ export const usePopupController = () => {
         return;
       }
 
-      const randomIndex = Math.floor(Math.random() * filteredMultimedias.length);
-      const multimedia = filteredMultimedias[randomIndex];
       addResult(multimedia, options);
       void chrome.storage.sync
         .set({ imdbRandomizer_lastRandom: multimedia })

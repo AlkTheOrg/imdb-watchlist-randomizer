@@ -15,6 +15,8 @@
     "lint": "oxlint src scripts vite.config.mjs",
     "lint:fix": "oxlint --fix src scripts vite.config.mjs",
     "prebuild": "pnpm version:check",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc",
     "typecheck:watch": "tsc --watch --preserveWatchOutput",
     "dev": "pnpm typecheck && pnpm build:dev && concurrently --kill-others --names vite,types,chrome \"pnpm build:watch\" \"pnpm typecheck:watch\" \"web-ext run --source-dir dist --target chromium\"",
@@ -34,6 +36,7 @@
     "oxlint": "^1.87.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
+    "vitest": "^5.0.3",
     "web-ext": "^10.7.0"
   },
   "packageManager": "pnpm@10.10.0"

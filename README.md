@@ -12,7 +12,7 @@ I suggest you to read [About the App](https://github.com/AlkTheOrg/imdb-watchlis
 
 ## Requirements
 
-- Node.js `^20.19.0` or `>=22.12.0`
+- Node.js `>=22.12.0`
 - pnpm `10.10.0`
 - Google Chrome
 
@@ -50,11 +50,13 @@ The generated extension is written to `dist/`. It can also be loaded manually fr
 | `pnpm fmt:check`     | Check formatting without changing files          |
 | `pnpm lint`          | Check source files with Oxlint                   |
 | `pnpm lint:fix`      | Apply safe automatic Oxlint fixes                |
+| `pnpm test`          | Run unit tests once with Vitest                  |
+| `pnpm test:watch`    | Re-run relevant unit tests as files change       |
 | `pnpm typecheck`     | Type-check the project without emitting files    |
 | `pnpm build`         | Verify that the production extension can build   |
 | `pnpm version:check` | Verify that project and extension versions match |
 
-Automated tests are not configured yet. For behavior changes, run `pnpm dev` and test the extension manually against an IMDb watchlist.
+Unit tests cover the pure randomization logic. For extension behavior changes, run `pnpm dev` and test the extension manually against an IMDb watchlist.
 
 ## Versioning
 
