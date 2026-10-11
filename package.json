@@ -1,6 +1,6 @@
 {
   "name": "imdb-watchlist-randomizer",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "",
   "keywords": [],
   "license": "ISC",
@@ -12,11 +12,14 @@
     "build:watch": "vite build --watch --mode development",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "lint": "oxlint src vite.config.mjs",
-    "lint:fix": "oxlint --fix src vite.config.mjs",
+    "lint": "oxlint src scripts vite.config.mjs",
+    "lint:fix": "oxlint --fix src scripts vite.config.mjs",
+    "prebuild": "pnpm version:check",
     "typecheck": "tsc",
     "typecheck:watch": "tsc --watch --preserveWatchOutput",
-    "dev": "pnpm typecheck && pnpm build:dev && concurrently --kill-others --names vite,types,chrome \"pnpm build:watch\" \"pnpm typecheck:watch\" \"web-ext run --source-dir dist --target chromium\""
+    "dev": "pnpm typecheck && pnpm build:dev && concurrently --kill-others --names vite,types,chrome \"pnpm build:watch\" \"pnpm typecheck:watch\" \"web-ext run --source-dir dist --target chromium\"",
+    "version:bump": "node scripts/version.mjs",
+    "version:check": "node scripts/version.mjs check"
   },
   "dependencies": {
     "react": "^19.3.0",
