@@ -22,6 +22,15 @@ nav {
   background: #f5c518;
 }
 
+.navbar-logo {
+  width: 44px;
+  height: 32px;
+}
+
+.github-logo {
+  width: 24px;
+}
+
 nav,
 form {
   user-select: none;
@@ -63,8 +72,24 @@ nav a:hover {
   background-color: #d84400;
 }
 
-#randomizeFromSync:disabled {
+.randomize-from-cache:disabled {
   background-color: rgb(170, 170, 170);
+}
+
+.option-field {
+  width: auto;
+}
+
+.status-message--error {
+  color: rgb(255, 0, 0);
+}
+
+.status-message--progress {
+  color: #dc3545;
+}
+
+.status-message--success {
+  color: #ff4f00;
 }
 
 /******************
