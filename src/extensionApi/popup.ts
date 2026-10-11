@@ -31,9 +31,6 @@ export const saveOptions = (options: RandomizerOptions): Promise<void> =>
 export const saveLastRandom = (multimedia: Multimedia): Promise<void> =>
   chrome.storage.sync.set({ [storageKeys.lastRandom]: multimedia });
 
-export const saveWatchlist = (watchlist: Multimedia[]): Promise<void> =>
-  chrome.storage.local.set({ [storageKeys.watchlist]: watchlist });
-
 export const requestWatchlistScan = (): Promise<unknown> =>
   chrome.runtime.sendMessage({ message: "scan_watchlist" } satisfies ExtensionMessage);
 

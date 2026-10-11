@@ -5,7 +5,6 @@ import {
   requestWatchlistScan,
   saveLastRandom,
   saveOptions,
-  saveWatchlist,
 } from "../extensionApi/popup";
 import type { ExtensionMessage, Multimedia, RandomizerOptions } from "../types";
 import { pickRandomMultimedia } from "./randomizer";
@@ -136,9 +135,6 @@ export const usePopupController = () => {
         case "all_multimedia": {
           const multimedias = request.payload;
           setWatchlist(multimedias);
-          void saveWatchlist(multimedias).catch((error: unknown) => {
-            console.error("[IMDb Randomizer] Could not cache the watchlist.", error);
-          });
           if (randomize(multimedias)) {
             setStatus({
               type: "success",
